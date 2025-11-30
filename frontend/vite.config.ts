@@ -28,6 +28,12 @@ export default defineConfig({
     esbuildOptions: {
       target: "esnext",
     },
-    exclude: ['lucid-cardano'] // Parfois nécessaire pour éviter le double bundling
+    exclude: ['lucid-cardano'] 
+  },
+  resolve: {
+    alias: {
+      // Hack pour corriger l'erreur "Could not load stream-browserify/web"
+      'stream-browserify/web': 'stream-browserify', 
+    },
   },
 })
