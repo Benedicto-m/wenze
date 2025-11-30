@@ -21,6 +21,8 @@ export default defineConfig({
   },
   build: {
     target: "esnext",
+    outDir: "dist", // Force le dossier de sortie standard
+    emptyOutDir: true, // Vide le dossier avant de construire
   },
   optimizeDeps: {
     esbuildOptions: {
