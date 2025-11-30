@@ -1,4 +1,4 @@
-import { Lucid } from "lucid-cardano";
+import { Lucid } from "@lucid-evolution/lucid";
 
 // Type definition for the window.cardano object injected by wallets
 declare global {
