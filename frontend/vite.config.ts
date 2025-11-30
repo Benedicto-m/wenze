@@ -33,7 +33,8 @@ export default defineConfig({
   resolve: {
     alias: {
       // Hack pour corriger l'erreur "Could not load stream-browserify/web"
-      'stream-browserify/web': 'stream-browserify', 
+      'stream-browserify/web': 'web-streams-polyfill', 
+      'node:stream/web': 'web-streams-polyfill',
     },
   },
 })
