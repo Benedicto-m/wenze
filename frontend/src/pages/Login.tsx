@@ -50,13 +50,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
       {/* Animated gradient background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-cyan-950/30" />
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-cyan-500/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-fuchsia-600/10 rounded-full blur-[150px]" />
+        <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-600/20 rounded-full blur-[80px] sm:blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-cyan-500/15 rounded-full blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-fuchsia-600/10 rounded-full blur-[100px] sm:blur-[150px]" />
       </div>
 
       {/* Subtle grid pattern */}
@@ -64,39 +64,39 @@ const Login = () => {
         className="absolute inset-0 opacity-[0.015]"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '64px 64px'
+          backgroundSize: '48px 48px'
         }}
       />
 
       {/* Main content */}
-      <div className="relative z-10 w-full max-w-[420px] px-6">
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
         {/* Logo */}
-        <div className="text-center mb-10 animate-fade-in">
+        <div className="text-center mb-8 sm:mb-10 animate-fade-in">
           <img 
             src="/logo.png" 
             alt="Wenze" 
-            className="h-12 mx-auto mb-6 drop-shadow-2xl"
+            className="h-10 sm:h-12 mx-auto mb-4 sm:mb-6 drop-shadow-2xl"
           />
         </div>
 
         {/* Form Card */}
         <div 
-          className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 shadow-2xl animate-slide-up"
+          className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up"
           style={{ 
-            boxShadow: '0 0 80px -20px rgba(139, 92, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+            boxShadow: '0 0 60px -20px rgba(139, 92, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
           }}
         >
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
               Connexion
             </h1>
-            <p className="text-white/50 mt-2 text-sm">
+            <p className="text-white/50 mt-1.5 sm:mt-2 text-sm">
               Accédez à votre espace
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm animate-slide-up">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm animate-slide-up">
               {error}
             </div>
           )}
@@ -106,32 +106,32 @@ const Login = () => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-3 bg-white text-gray-800 font-medium py-3 px-4 rounded-xl hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            className="w-full flex items-center justify-center gap-2.5 sm:gap-3 bg-white text-gray-800 font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-sm sm:text-base"
           >
             <GoogleIcon />
             {googleLoading ? 'Connexion...' : 'Continuer avec Google'}
           </button>
 
           {/* Divider */}
-          <div className="relative my-7">
+          <div className="relative my-5 sm:my-7">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/10"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="px-4 bg-transparent text-xs text-white/30 uppercase tracking-wider">ou</span>
+              <span className="px-3 sm:px-4 bg-transparent text-[10px] sm:text-xs text-white/30 uppercase tracking-wider">ou</span>
             </div>
           </div>
 
           {/* Email Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
             <div>
-              <label className="block text-xs font-medium text-white/60 mb-2 uppercase tracking-wider">
+              <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
                 Email
               </label>
               <input
                 type="email"
                 required
-                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
                 placeholder="vous@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -139,13 +139,13 @@ const Login = () => {
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-medium text-white/60 uppercase tracking-wider">
+              <div className="flex justify-between items-center mb-1.5 sm:mb-2">
+                <label className="block text-[10px] sm:text-xs font-medium text-white/60 uppercase tracking-wider">
                   Mot de passe
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                  className="text-[10px] sm:text-xs text-violet-400 hover:text-violet-300 transition-colors"
                 >
                   Oublié ?
                 </Link>
@@ -153,7 +153,7 @@ const Login = () => {
               <input
                 type="password"
                 required
-                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -163,11 +163,11 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 text-sm sm:text-base"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                   </svg>
@@ -180,7 +180,7 @@ const Login = () => {
           </form>
 
           {/* Sign Up Link */}
-          <p className="mt-8 text-center text-white/50 text-sm">
+          <p className="mt-6 sm:mt-8 text-center text-white/50 text-xs sm:text-sm">
             Pas de compte ?{' '}
             <Link 
               to="/signup" 
@@ -192,7 +192,7 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-xs text-white/25">
+        <p className="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-white/25 px-4">
           En continuant, vous acceptez nos{' '}
           <a href="#" className="text-white/40 hover:text-white/60 transition-colors">Conditions</a>
           {' '}et{' '}

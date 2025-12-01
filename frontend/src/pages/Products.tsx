@@ -1,33 +1,80 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
+import { 
+  Search, 
+  Plus, 
+  ShoppingBag, 
+  Sparkles,
+  Clock,
+  ChevronDown,
+  MapPin,
+  Star,
+  ShoppingCart,
+  Smartphone,
+  Shirt,
+  Laptop,
+  Briefcase,
+  Home,
+  MoreHorizontal
+} from 'lucide-react';
 
 interface Product {
   id: string;
   title: string;
+  description: string;
   price_ada: number;
   image_url: string;
   seller_id: string;
+  category: string;
+  location: string;
+  created_at: string;
+  profiles?: {
+    full_name: string;
+    avatar_url: string;
+    reputation_score: number;
+  };
 }
+
+const CATEGORIES = [
+  { id: 'all', name: 'Tout', icon: ShoppingBag },
+  { id: 'electronics', name: 'Téléphones', icon: Smartphone },
+  { id: 'fashion', name: 'Mode', icon: Shirt },
+  { id: 'digital', name: 'Ordinateurs', icon: Laptop },
+  { id: 'home', name: 'Maison', icon: Home },
+  { id: 'other', name: 'Autres', icon: MoreHorizontal },
+];
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [products, searchQuery, sortBy, selectedCategory]);
+
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          profiles (full_name, avatar_url, reputation_score)
+        `)
         .eq('status', 'available')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProducts(data || []);
+      setFilteredProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -35,37 +82,285 @@ const Products = () => {
     }
   };
 
-  if (loading) return <div className="text-center py-10">Chargement des produits...</div>;
+  const filterAndSortProducts = () => {
+    let filtered = [...products];
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(p => 
+        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'price_low':
+        filtered.sort((a, b) => a.price_ada - b.price_ada);
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => b.price_ada - a.price_ada);
+        break;
+      case 'recent':
+      default:
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    setFilteredProducts(filtered);
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "À l'instant";
+    if (diffInHours < 24) return `${diffInHours}h`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}j`;
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+
+  const ProductSkeleton = () => (
+    <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 animate-pulse">
+      <div className="aspect-square bg-gray-200" />
+      <div className="p-3 sm:p-4 space-y-3">
+        <div className="h-3 sm:h-4 bg-gray-200 rounded-full w-3/4" />
+        <div className="h-3 sm:h-4 bg-gray-200 rounded-full w-1/2" />
+        <div className="flex justify-between items-center pt-2">
+          <div className="h-5 sm:h-6 bg-gray-200 rounded-full w-16 sm:w-20" />
+          <div className="h-7 sm:h-8 w-7 sm:w-8 bg-gray-200 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-secondary">Produits Récents</h1>
-        <Link to="/products/new" className="btn-primary w-full sm:w-auto text-center">
-          + Vendre un produit
-        </Link>
+    <div className="max-w-7xl mx-auto px-1 sm:px-0">
+      {/* Hero Header */}
+      <div className="relative mb-6 sm:mb-8 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 p-5 sm:p-8 md:p-12">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/2 -right-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-violet-500/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/2 -left-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-500/20 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur rounded-full text-xs sm:text-sm text-violet-200 mb-3 sm:mb-4">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Marketplace Wenze</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2">
+                Découvrez le Marché
+              </h1>
+              <p className="text-gray-400 text-sm sm:text-base max-w-md">
+                Téléphones, vêtements, ordinateurs et plus encore.
+              </p>
+            </div>
+
+            <Link
+              to="/products/new"
+              className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all text-sm sm:text-base"
+            >
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              Vendre
+            </Link>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-5 sm:mt-8">
+            <div className="relative">
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher un produit..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-white/10 backdrop-blur border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition text-sm sm:text-base"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {products.length === 0 ? (
-        <div className="text-center py-10 bg-white rounded-lg shadow">
-          <p className="text-gray-500 mb-4">Aucun produit disponible pour le moment.</p>
-          <Link to="/products/new" className="text-primary hover:underline">Soyez le premier vendeur !</Link>
+      {/* Categories */}
+      <div className="mb-5 sm:mb-6 -mx-1 px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 sm:gap-3 pb-2">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-sm whitespace-nowrap transition-all active:scale-95 ${
+                  isActive 
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20' 
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-primary/30 hover:text-primary'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {cat.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Filters Bar */}
+      <div className="flex items-center justify-between gap-3 mb-5 sm:mb-6">
+        <p className="text-gray-500 text-sm">
+          <strong className="text-dark">{filteredProducts.length}</strong> produit{filteredProducts.length !== 1 ? 's' : ''}
+        </p>
+
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="appearance-none bg-white border border-gray-200 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 pr-8 sm:pr-10 text-xs sm:text-sm font-medium text-gray-700 focus:outline-none focus:border-primary cursor-pointer"
+          >
+            <option value="recent">Récents</option>
+            <option value="price_low">Prix ↑</option>
+            <option value="price_high">Prix ↓</option>
+          </select>
+          <ChevronDown className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+          {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-12 sm:py-16 bg-white rounded-2xl border border-gray-100">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-bold text-dark mb-2">Aucun produit trouvé</h3>
+          <p className="text-gray-500 mb-6 text-sm sm:text-base px-4">
+            {searchQuery 
+              ? `Aucun résultat pour "${searchQuery}"`
+              : "Pas de produits dans cette catégorie"
+            }
+          </p>
+          <Link 
+            to="/products/new" 
+            className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white font-semibold rounded-xl text-sm sm:text-base"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            Ajouter un produit
+          </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <Link key={product.id} to={`/products/${product.id}`} className="card hover:shadow-md transition duration-300">
-              <div className="aspect-square bg-gray-200 rounded-lg mb-4 overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+          {filteredProducts.map((product, index) => (
+            <div 
+              key={product.id}
+              className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 animate-fade-in"
+              style={{ animationDelay: `${index * 30}ms` }}
+            >
+              {/* Image */}
+              <Link to={`/products/${product.id}`} className="block relative aspect-square overflow-hidden bg-gray-100">
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
+                  <img 
+                    src={product.image_url} 
+                    alt={product.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">Pas d'image</div>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ShoppingBag className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300" />
+                  </div>
                 )}
+
+                {/* Time Badge */}
+                <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-black/60 backdrop-blur rounded-lg text-[10px] sm:text-xs font-medium text-white">
+                    <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    {formatTimeAgo(product.created_at)}
+                  </span>
+                </div>
+              </Link>
+
+              {/* Content */}
+              <div className="p-3 sm:p-4">
+                {/* Seller Info - Cliquable */}
+                <Link 
+                  to={`/seller/${product.seller_id}`}
+                  className="flex items-center gap-2 mb-2 sm:mb-3 group/seller"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {product.profiles?.avatar_url ? (
+                    <img 
+                      src={product.profiles.avatar_url} 
+                      alt="" 
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover ring-2 ring-transparent group-hover/seller:ring-primary/30 transition"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white text-[10px] sm:text-xs font-bold">
+                      {product.profiles?.full_name?.charAt(0) || 'V'}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-700 font-medium truncate group-hover/seller:text-primary transition">
+                      {product.profiles?.full_name || 'Vendeur'}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400 fill-amber-400" />
+                      <span className="text-[10px] sm:text-xs text-gray-400">
+                        {product.profiles?.reputation_score || 0} pts
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Title */}
+                <Link to={`/products/${product.id}`}>
+                  <h3 className="font-semibold text-dark text-sm sm:text-base mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
+                    {product.title}
+                  </h3>
+                </Link>
+
+                {/* Location */}
+                <div className="flex items-center gap-1 text-gray-400 mb-2 sm:mb-3">
+                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span className="text-[10px] sm:text-xs truncate">{product.location || 'Goma, RDC'}</span>
+                </div>
+
+                {/* Price & Buy */}
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="text-base sm:text-lg font-bold text-primary">{product.price_ada}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 ml-1">ADA</span>
+                  </div>
+                  
+                  <Link 
+                    to={`/products/${product.id}`}
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-primary text-white text-[10px] sm:text-xs font-semibold rounded-lg sm:rounded-xl hover:bg-blue-700 active:scale-95 transition"
+                  >
+                    <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <span className="hidden sm:inline">Acheter</span>
+                  </Link>
+                </div>
               </div>
-              <h3 className="font-bold text-lg mb-1 truncate">{product.title}</h3>
-              <p className="text-primary font-bold">{product.price_ada} ADA</p>
-            </Link>
+            </div>
           ))}
+        </div>
+      )}
+
+      {/* Load More */}
+      {filteredProducts.length >= 12 && (
+        <div className="text-center mt-8 sm:mt-10">
+          <button className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 active:scale-95 transition text-sm sm:text-base">
+            Charger plus
+          </button>
         </div>
       )}
     </div>
@@ -73,5 +368,3 @@ const Products = () => {
 };
 
 export default Products;
-
-
