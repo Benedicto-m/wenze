@@ -1,62 +1,154 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, TrendingUp, Zap, ShoppingBag } from 'lucide-react';
+import { ShieldCheck, TrendingUp, Zap, ArrowRight, Sparkles } from 'lucide-react';
 
 const Home = () => {
   return (
-    <div className="flex flex-col items-center justify-center py-16 lg:py-24 text-center bg-gradient-to-b from-white to-gray-50">
-      
+    <div className="relative px-1 sm:px-0">
       {/* Hero Section */}
-      <div className="max-w-4xl px-4 mb-16 animate-fade-in-up">
-        <div className="inline-block bg-blue-50 text-primary px-4 py-1 rounded-full text-sm font-bold mb-6 tracking-wide uppercase">
-          L'innovation made in Goma 🌋
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 mb-10 sm:mb-16">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute -top-1/2 -right-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-500/20 rounded-full blur-[80px] sm:blur-[120px]" />
+          <div className="absolute -bottom-1/2 -left-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-cyan-500/20 rounded-full blur-[60px] sm:blur-[100px]" />
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+              backgroundSize: '24px 24px'
+            }}
+          />
         </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold text-dark mb-6 tracking-tight leading-tight">
-          L'Avenir du Commerce <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Sécurisé & Rapide</span>
-        </h1>
-        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-          WENZE réinvente l'échange à Goma. Achetez, Vendez, Echangez avec une garantie de sécurité totale grâce à la technologie Blockchain.
-        </p>
 
-        <div className="flex justify-center">
-          <Link to="/login" className="btn-primary text-lg px-10 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition flex items-center gap-2">
-            <ShoppingBag size={20} />
-            Commencer
-          </Link>
+        <div className="relative z-10 px-5 py-12 sm:px-12 sm:py-32 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/10 backdrop-blur rounded-full text-xs sm:text-sm text-violet-200 mb-6 sm:mb-8 animate-fade-in">
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>L'innovation made in Goma 🌋</span>
+          </div>
+
+          {/* Main Title */}
+          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold text-white mb-4 sm:mb-6 tracking-tight leading-tight animate-fade-in-up">
+            L'Avenir du Commerce
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">
+              Sécurisé & Rapide
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed animate-fade-in-up px-2" style={{ animationDelay: '0.1s' }}>
+            WENZE réinvente l'échange à Goma. Achetez, vendez, échangez avec une garantie de sécurité totale.
+          </p>
+
+          {/* CTA Button */}
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <Link 
+              to="/login" 
+              className="inline-flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-base sm:text-lg font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 active:scale-95 sm:hover:-translate-y-1 group"
+            >
+              Commencer maintenant
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-16 mt-10 sm:mt-16 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">10K+</p>
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">Utilisateurs</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">50K+</p>
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">Transactions</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">100%</p>
+              <p className="text-xs sm:text-sm text-gray-400 mt-1">Sécurisé</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl px-6 mt-8">
-        <div className="card group hover:bg-primary hover:text-white transition-all duration-300 border-none shadow-lg p-8 text-left rounded-3xl">
-          <div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-white/20 transition">
-            <ShieldCheck className="text-primary group-hover:text-white h-8 w-8" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3">Confiance Absolue</h3>
-          <p className="text-gray-500 group-hover:text-blue-100 leading-relaxed">
-            Fini les arnaques. Vos fonds sont protégés par Escrow jusqu'à ce que vous validiez la réception. La sécurité bancaire, simplifiée.
+      {/* Features Section */}
+      <div className="mb-10 sm:mb-16">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-dark mb-3 sm:mb-4">
+            Pourquoi choisir Wenze ?
+          </h2>
+          <p className="text-gray-500 max-w-2xl mx-auto text-sm sm:text-base px-4">
+            Une plateforme pensée pour simplifier vos échanges tout en garantissant votre sécurité.
           </p>
         </div>
 
-        <div className="card group hover:bg-wzp hover:text-white transition-all duration-300 border-none shadow-lg p-8 text-left rounded-3xl">
-          <div className="bg-orange-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-white/20 transition">
-            <TrendingUp className="text-wzp group-hover:text-white h-8 w-8" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Feature 1 */}
+          <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-gray-100 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform duration-300">
+                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 sm:mb-3">Confiance Absolue</h3>
+              <p className="text-gray-500 leading-relaxed text-sm sm:text-base">
+                Vos fonds sont protégés par notre système d'Escrow jusqu'à validation de la réception.
+              </p>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold mb-3">Gagnez +</h3>
-          <p className="text-gray-500 group-hover:text-orange-100 leading-relaxed">
-            Chaque échange compte. Cumulez des points WZP et débloquez des avantages exclusifs à travers la ville.
-          </p>
-        </div>
 
-        <div className="card group hover:bg-dark hover:text-white transition-all duration-300 border-none shadow-lg p-8 text-left rounded-3xl">
-          <div className="bg-gray-100 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-white/20 transition">
-            <Zap className="text-dark group-hover:text-white h-8 w-8" />
+          {/* Feature 2 */}
+          <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-gray-100 hover:border-wzp/30 hover:shadow-xl hover:shadow-wzp/5 transition-all duration-500 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-wzp/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-wzp to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-wzp/20 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 sm:mb-3">Gagnez des Points</h3>
+              <p className="text-gray-500 leading-relaxed text-sm sm:text-base">
+                Chaque échange compte. Cumulez des points WZP et débloquez des avantages exclusifs.
+              </p>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold mb-3">Vitesse Éclair</h3>
-          <p className="text-gray-500 group-hover:text-gray-400 leading-relaxed">
-            Connectez votre Wallet en 2 secondes. Transactions instantanées et transparentes. Le Web3 à portée de main.
-          </p>
+
+          {/* Feature 3 */}
+          <div className="group relative bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-gray-100 hover:border-violet-500/30 hover:shadow-xl hover:shadow-violet-500/5 transition-all duration-500 overflow-hidden sm:col-span-2 lg:col-span-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform duration-300">
+                <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-dark mb-2 sm:mb-3">Vitesse Éclair</h3>
+              <p className="text-gray-500 leading-relaxed text-sm sm:text-base">
+                Transactions instantanées et transparentes. Le futur du commerce à portée de main.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary via-blue-600 to-violet-600 p-6 sm:p-8 md:p-12">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute -top-1/2 -right-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-white rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/2 -left-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-cyan-300 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+          <div className="text-center sm:text-left">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">
+              Prêt à commencer ?
+            </h3>
+            <p className="text-blue-100 text-sm sm:text-base">
+              Rejoignez des milliers d'utilisateurs qui font confiance à Wenze.
+            </p>
+          </div>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:shadow-xl transition-all active:scale-95 sm:hover:-translate-y-0.5 shrink-0 text-sm sm:text-base"
+          >
+            Créer un compte gratuit
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Link>
         </div>
       </div>
     </div>
@@ -64,5 +156,3 @@ const Home = () => {
 };
 
 export default Home;
-
-

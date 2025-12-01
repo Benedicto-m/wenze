@@ -8,9 +8,11 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
 import Products from './pages/Products';
 import CreateProduct from './pages/CreateProduct';
 import ProductDetail from './pages/ProductDetail';
+import SellerProfile from './pages/SellerProfile';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 
@@ -69,6 +71,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/seller/:id" element={<SellerProfile />} />
                 <Route path="/products/new" element={
                   <ProtectedRoute>
                     <CreateProduct />
@@ -79,6 +82,11 @@ function App() {
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 } />
                 <Route path="/orders" element={

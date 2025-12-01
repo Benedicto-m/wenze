@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, User as UserIcon, Wallet, LogOut, ChevronDown, Copy, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Menu, X, User as UserIcon, Wallet, LogOut, ChevronDown, Copy, Check, Settings, LayoutDashboard, ArrowLeftRight, Camera, Package } from 'lucide-react';
 import WalletModal, { WalletData } from './WalletModal';
+
+interface Profile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -11,7 +17,24 @@ const Navbar = () => {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [connectedWallet, setConnectedWallet] = useState<WalletData | null>(null);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [addressCopied, setAddressCopied] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', user?.id)
+      .single();
+    if (data) setProfile(data);
+  };
 
   const handleWalletConnect = (walletData: WalletData) => {
     setConnectedWallet(walletData);
@@ -73,6 +96,18 @@ const Navbar = () => {
               
               {user ? (
                 <div className="flex items-center space-x-3 ml-4">
+                  {/* AdaEx Exchange Button */}
+                  <a
+                    href="https://app.adaex.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition shadow-sm bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white"
+                    title="Échanger ADA ↔ FC via Momo"
+                  >
+                    <ArrowLeftRight size={16} />
+                    <span className="hidden lg:inline">ADA ↔ FC</span>
+                  </a>
+
                   {/* Wallet Button */}
                   {connectedWallet ? (
                     <div className="relative">
@@ -134,13 +169,85 @@ const Navbar = () => {
                     </button>
                   )}
                   
-                  <Link to="/dashboard" className="p-2 hover:bg-white/10 rounded-full transition" title="Mon Profil">
-                    <UserIcon size={24} />
-                  </Link>
-                  
-                  <button onClick={handleSignOut} className="p-2 hover:bg-red-500 rounded-full transition" title="Déconnexion">
-                    <LogOut size={22} />
-                  </button>
+                  {/* Profile Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      className="flex items-center gap-2 p-1.5 hover:bg-white/10 rounded-full transition"
+                    >
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt="Profile"
+                          className="w-8 h-8 rounded-full object-cover border-2 border-white/30"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                          <UserIcon size={18} />
+                        </div>
+                      )}
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showProfileDropdown && (
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+                        {/* Profile Info */}
+                        <div className="p-4 bg-gradient-to-r from-primary to-blue-600">
+                          <div className="flex items-center gap-3">
+                            {profile?.avatar_url ? (
+                              <img
+                                src={profile.avatar_url}
+                                alt="Profile"
+                                className="w-12 h-12 rounded-full object-cover border-2 border-white/50"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                                <UserIcon size={24} className="text-white" />
+                              </div>
+                            )}
+                            <div className="text-white">
+                              <p className="font-semibold">{profile?.full_name || 'Utilisateur'}</p>
+                              <p className="text-sm text-blue-100 truncate">{user?.email}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="p-2">
+                          <Link
+                            to="/dashboard"
+                            onClick={() => setShowProfileDropdown(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition"
+                          >
+                            <LayoutDashboard className="w-5 h-5 text-gray-400" />
+                            <span className="font-medium">Tableau de bord</span>
+                          </Link>
+                          <Link
+                            to="/profile"
+                            onClick={() => setShowProfileDropdown(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition"
+                          >
+                            <Settings className="w-5 h-5 text-gray-400" />
+                            <span className="font-medium">Modifier le profil</span>
+                          </Link>
+                        </div>
+
+                        {/* Logout */}
+                        <div className="border-t border-gray-100 p-2">
+                          <button
+                            onClick={() => {
+                              setShowProfileDropdown(false);
+                              handleSignOut();
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            <span className="font-medium">Se déconnecter</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
@@ -200,11 +307,81 @@ const Navbar = () => {
              )}
              {user && (
                <>
-                  <div className="border-t border-gray-100 my-2"></div>
+                  {/* Mobile Profile Card */}
+                  <div className="bg-gradient-to-r from-primary to-blue-600 rounded-xl p-4 -mx-1">
+                    <div className="flex items-center gap-3">
+                      {/* Profile Photo */}
+                      <div className="relative">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt="Profile"
+                            className="w-16 h-16 rounded-xl object-cover border-2 border-white/30"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center">
+                            <UserIcon size={28} className="text-white" />
+                          </div>
+                        )}
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-lg shadow flex items-center justify-center"
+                        >
+                          <Camera size={14} className="text-primary" />
+                        </Link>
+                      </div>
+                      
+                      {/* Profile Info */}
+                      <div className="flex-1 min-w-0 text-white">
+                        <p className="font-semibold text-lg truncate">
+                          {profile?.full_name || 'Utilisateur'}
+                        </p>
+                        <p className="text-sm text-blue-100 truncate">{user?.email}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Quick Profile Actions */}
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 py-2 bg-white/20 rounded-lg text-white text-sm font-medium active:bg-white/30"
+                      >
+                        <Settings size={16} />
+                        Modifier
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-center gap-2 py-2 bg-white/20 rounded-lg text-white text-sm font-medium active:bg-white/30"
+                      >
+                        <LayoutDashboard size={16} />
+                        Dashboard
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-100 my-3"></div>
+
+                  {/* AdaEx Exchange Button Mobile */}
+                  <a
+                    href="https://app.adaex.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 text-left font-medium text-orange-600 active:bg-orange-100"
+                  >
+                    <ArrowLeftRight size={20} />
+                    <div>
+                      <span className="block">Échanger ADA ↔ FC</span>
+                      <span className="text-xs text-orange-400">Via Mobile Money</span>
+                    </div>
+                  </a>
                   
                   {/* Mobile Wallet Section */}
                   {connectedWallet ? (
-                    <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-xl p-4 mb-2">
+                    <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <img src={connectedWallet.icon} alt={connectedWallet.name} className="w-6 h-6 rounded-lg" />
@@ -222,9 +399,9 @@ const Navbar = () => {
                           handleDisconnectWallet();
                           setIsMenuOpen(false);
                         }}
-                        className="w-full text-center py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="w-full text-center py-2 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 rounded-lg transition"
                       >
-                        Déconnecter
+                        Déconnecter le wallet
                       </button>
                     </div>
                   ) : (
@@ -233,24 +410,28 @@ const Navbar = () => {
                         setIsWalletModalOpen(true); 
                         setIsMenuOpen(false); 
                       }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 text-left font-medium text-primary"
+                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 text-left font-medium text-primary active:bg-blue-100"
                     >
                        <Wallet size={20} />
                        <span>Connecter Wallet Cardano</span>
                     </button>
                   )}
 
+                  <div className="border-t border-gray-100 my-3"></div>
+
+                  {/* Navigation Links */}
                   <Link 
-                    to="/dashboard" 
-                    className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 font-medium"
+                    to="/orders" 
+                    className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <UserIcon size={20} />
-                    <span>Mon Espace</span>
+                    <Package size={20} className="text-gray-400" />
+                    <span>Mes commandes</span>
                   </Link>
+
                   <button 
                     onClick={() => { handleSignOut(); setIsMenuOpen(false); }} 
-                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-50 text-red-500 font-medium"
+                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-50 active:bg-red-100 text-red-500 font-medium"
                   >
                     <LogOut size={20} />
                     <span>Déconnexion</span>
@@ -268,11 +449,14 @@ const Navbar = () => {
         onConnect={handleWalletConnect}
       />
 
-      {/* Click outside to close wallet dropdown */}
-      {showWalletDropdown && (
+      {/* Click outside to close dropdowns */}
+      {(showWalletDropdown || showProfileDropdown) && (
         <div 
           className="fixed inset-0 z-30" 
-          onClick={() => setShowWalletDropdown(false)}
+          onClick={() => {
+            setShowWalletDropdown(false);
+            setShowProfileDropdown(false);
+          }}
         />
       )}
     </>

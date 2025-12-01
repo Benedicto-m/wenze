@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Users, TrendingUp } from 'lucide-react';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -12,31 +11,23 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Fonction pour traduire les erreurs Supabase en français
 const translateError = (errorMessage: string): string => {
   const errorTranslations: { [key: string]: string } = {
-    'User already registered': 'Un compte existe déjà avec cette adresse email. Veuillez vous connecter.',
-    'A user with this email address has already been registered': 'Cette adresse email est déjà utilisée. Veuillez vous connecter ou utiliser une autre adresse.',
-    'Email rate limit exceeded': 'Trop de tentatives. Veuillez réessayer dans quelques minutes.',
+    'User already registered': 'Un compte existe déjà avec cette adresse email.',
+    'Email rate limit exceeded': 'Trop de tentatives. Réessayez dans quelques minutes.',
     'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.',
-    'Unable to validate email address: invalid format': 'Format d\'email invalide. Veuillez vérifier votre adresse.',
-    'Signup requires a valid password': 'Veuillez entrer un mot de passe valide.',
-    'To signup, please provide your email': 'Veuillez entrer votre adresse email.',
   };
 
-  // Vérifier si le message contient une des clés connues
   for (const [key, value] of Object.entries(errorTranslations)) {
     if (errorMessage.toLowerCase().includes(key.toLowerCase())) {
       return value;
     }
   }
 
-  // Si l'erreur contient "already" et "email", c'est probablement un doublon
   if (errorMessage.toLowerCase().includes('already') && errorMessage.toLowerCase().includes('email')) {
-    return 'Cette adresse email est déjà utilisée. Veuillez vous connecter.';
+    return 'Cette adresse email est déjà utilisée.';
   }
 
-  // Retourner le message original si pas de traduction
   return errorMessage;
 };
 
@@ -48,17 +39,14 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errorType, setErrorType] = useState<'error' | 'warning'>('error');
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Vérification côté client
     if (password.length < 6) {
       setError('Le mot de passe doit contenir au moins 6 caractères.');
-      setErrorType('error');
       setLoading(false);
       return;
     }
@@ -71,15 +59,12 @@ const Signup = () => {
 
     if (error) {
       setError(translateError(error.message));
-      setErrorType('error');
       setLoading(false);
     } else if (data?.user?.identities?.length === 0) {
-      // Supabase retourne un user mais sans identities si l'email existe déjà
-      setError('Cette adresse email est déjà utilisée. Veuillez vous connecter.');
-      setErrorType('warning');
+      setError('Cette adresse email est déjà utilisée.');
       setLoading(false);
     } else {
-      alert('Inscription réussie ! Vérifiez votre email ou connectez-vous.');
+      alert('Inscription réussie ! Vérifiez votre email.');
       navigate('/login');
     }
   };
@@ -100,208 +85,167 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel - Branding (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-wenze-dark via-primary to-blue-600">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-40 left-10 w-80 h-80 bg-wzp rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-72 h-72 bg-blue-300 rounded-full blur-3xl"></div>
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          {/* Logo */}
-          <div className="mb-8 animate-fade-in">
-            <img src="/logo.png" alt="Wenze" className="h-16 w-auto animate-float" />
-          </div>
-
-          <h1 className="text-5xl font-bold mb-4 animate-slide-up">
-            Rejoignez <span className="text-wzp">Wenze</span>
-          </h1>
-          <p className="text-xl text-blue-100 mb-12 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            Créez votre compte et commencez à vendre ou acheter en toute sécurité.
-          </p>
-
-          {/* Stats / Benefits */}
-          <div className="grid grid-cols-2 gap-6 mb-12">
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <Users className="w-8 h-8 text-wzp mb-3" />
-              <h3 className="text-2xl font-bold">10K+</h3>
-              <p className="text-sm text-blue-200">Utilisateurs actifs</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-6 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-              <TrendingUp className="w-8 h-8 text-wzp mb-3" />
-              <h3 className="text-2xl font-bold">50K+</h3>
-              <p className="text-sm text-blue-200">Transactions réussies</p>
-            </div>
-          </div>
-
-          {/* Testimonial */}
-          <div className="bg-white/10 backdrop-blur rounded-2xl p-6 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-wzp rounded-full flex items-center justify-center text-xl font-bold">
-                JM
-              </div>
-              <div>
-                <p className="font-semibold">Jean-Marc K.</p>
-                <p className="text-sm text-blue-200">Vendeur vérifié</p>
-              </div>
-            </div>
-            <p className="text-blue-100 italic">
-              "Wenze m'a permis de développer mon business en toute confiance. Le système d'escrow est vraiment rassurant !"
-            </p>
-          </div>
-
-          {/* Trust Badge */}
-          <div className="mt-8 flex items-center gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <Shield className="w-5 h-5 text-wzp" />
-            <p className="text-sm text-blue-200">
-              Vos données sont protégées et ne seront jamais partagées
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-cyan-950/30" />
+        <div className="absolute top-0 right-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-cyan-500/20 rounded-full blur-[80px] sm:blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 left-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-violet-600/15 rounded-full blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-fuchsia-600/10 rounded-full blur-[100px] sm:blur-[150px]" />
       </div>
 
-      {/* Right Panel - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gray-50">
-        <div className="w-full max-w-md animate-fade-in">
-          {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <img src="/logo.png" alt="Wenze" className="h-12 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-dark">
-              Rejoignez <span className="text-primary">Wenze</span>
+      {/* Subtle grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '48px 48px'
+        }}
+      />
+
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
+        {/* Logo */}
+        <div className="text-center mb-6 sm:mb-8 animate-fade-in">
+          <img 
+            src="/logo.png" 
+            alt="Wenze" 
+            className="h-10 sm:h-12 mx-auto mb-4 sm:mb-6 drop-shadow-2xl"
+          />
+        </div>
+
+        {/* Form Card */}
+        <div 
+          className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up"
+          style={{ 
+            boxShadow: '0 0 60px -20px rgba(6, 182, 212, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+          }}
+        >
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
+              Créer un compte
             </h1>
-          </div>
-
-          {/* Form Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-dark">Créer un compte</h2>
-              <p className="text-gray-500 mt-2">C'est gratuit et rapide</p>
-            </div>
-
-            {error && (
-              <div className={`p-4 rounded-xl mb-6 text-sm border animate-slide-up ${
-                errorType === 'warning' 
-                  ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                  : 'bg-red-50 text-red-600 border-red-100'
-              }`}>
-                <p className="font-medium mb-1">
-                  {errorType === 'warning' ? '⚠️ Attention' : '❌ Erreur'}
-                </p>
-                <p>{error}</p>
-                {errorType === 'warning' && (
-                  <Link to="/login" className="inline-block mt-2 text-primary font-semibold hover:underline">
-                    → Se connecter
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {/* Google Button */}
-            <button
-              type="button"
-              onClick={handleGoogleSignup}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-700 font-semibold py-3.5 px-4 rounded-xl hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <GoogleIcon />
-              {googleLoading ? 'Inscription en cours...' : 'Continuer avec Google'}
-            </button>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="px-4 bg-white text-sm text-gray-400">ou avec votre email</span>
-              </div>
-            </div>
-
-            {/* Email Form */}
-            <form onSubmit={handleSignup} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nom complet
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none text-base"
-                  placeholder="Jean Dupont"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Adresse email
-                </label>
-                <input
-                  type="email"
-                  required
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none text-base"
-                  placeholder="vous@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Mot de passe
-                </label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none text-base"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <p className="text-xs text-gray-400 mt-2">Minimum 6 caractères</p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-primary to-blue-600 text-white font-semibold py-3.5 px-4 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    Création du compte...
-                  </span>
-                ) : (
-                  'Créer mon compte'
-                )}
-              </button>
-            </form>
-
-            {/* Login Link */}
-            <p className="mt-8 text-center text-gray-600">
-              Déjà un compte ?{' '}
-              <Link to="/login" className="text-primary font-semibold hover:underline">
-                Se connecter
-              </Link>
+            <p className="text-white/50 mt-1.5 sm:mt-2 text-sm">
+              Rejoignez la communauté Wenze
             </p>
           </div>
 
-          {/* Footer */}
-          <p className="mt-8 text-center text-xs text-gray-400">
-            En créant un compte, vous acceptez nos{' '}
-            <a href="#" className="underline hover:text-gray-600">Conditions d'utilisation</a>
-            {' '}et notre{' '}
-            <a href="#" className="underline hover:text-gray-600">Politique de confidentialité</a>
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm animate-slide-up">
+              {error}
+              {error.includes('déjà utilisée') && (
+                <Link to="/login" className="block mt-2 text-cyan-400 font-medium hover:underline">
+                  → Se connecter
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* Google Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading}
+            className="w-full flex items-center justify-center gap-2.5 sm:gap-3 bg-white text-gray-800 font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-sm sm:text-base"
+          >
+            <GoogleIcon />
+            {googleLoading ? 'Inscription...' : 'Continuer avec Google'}
+          </button>
+
+          {/* Divider */}
+          <div className="relative my-5 sm:my-7">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 sm:px-4 bg-transparent text-[10px] sm:text-xs text-white/30 uppercase tracking-wider">ou</span>
+            </div>
+          </div>
+
+          {/* Email Form */}
+          <form onSubmit={handleSignup} className="space-y-3 sm:space-y-4">
+            <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Nom complet
+              </label>
+              <input
+                type="text"
+                required
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                placeholder="Jean Dupont"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                placeholder="vous@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Mot de passe
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-white/30">Minimum 6 caractères</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:from-cyan-400 hover:to-violet-400 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-cyan-500/25 mt-2 text-sm sm:text-base"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Création...
+                </span>
+              ) : (
+                'Créer mon compte'
+              )}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <p className="mt-6 sm:mt-8 text-center text-white/50 text-xs sm:text-sm">
+            Déjà un compte ?{' '}
+            <Link 
+              to="/login" 
+              className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors"
+            >
+              Se connecter
+            </Link>
           </p>
         </div>
+
+        {/* Footer */}
+        <p className="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-white/25 px-4">
+          En créant un compte, vous acceptez nos{' '}
+          <a href="#" className="text-white/40 hover:text-white/60 transition-colors">Conditions</a>
+          {' '}et{' '}
+          <a href="#" className="text-white/40 hover:text-white/60 transition-colors">Confidentialité</a>
+        </p>
       </div>
     </div>
   );

@@ -2,11 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  Truck, 
+  AlertCircle, 
+  ShoppingBag,
+  ArrowRight,
+  Filter
+} from 'lucide-react';
 
 const Orders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'buyer' | 'seller'>('all');
 
   useEffect(() => {
     if (user) fetchOrders();
@@ -17,12 +28,12 @@ const Orders = () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-            *,
-            products:product_id(title, image_url),
-            buyer:buyer_id(full_name),
-            seller:seller_id(full_name)
+          *,
+          products:product_id(title, image_url),
+          buyer:buyer_id(full_name, avatar_url),
+          seller:seller_id(full_name, avatar_url)
         `)
-        .or(`buyer_id.eq.${user?.id},seller_id.eq.${user?.id}`) // Get orders where I am buyer OR seller
+        .or(`buyer_id.eq.${user?.id},seller_id.eq.${user?.id}`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -34,54 +45,230 @@ const Orders = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-        case 'pending': return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-bold">En attente</span>;
-        case 'escrow_web2': return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">Escrow Sécurisé</span>;
-        case 'shipped': return <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-bold">Expédié</span>;
-        case 'completed': return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">Terminé</span>;
-        case 'disputed': return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-bold">Litige</span>;
-        default: return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-bold">{status}</span>;
+      case 'pending':
+        return { 
+          label: 'En attente', 
+          color: 'bg-amber-50 text-amber-600 border-amber-200',
+          icon: Clock
+        };
+      case 'escrow_web2':
+        return { 
+          label: 'Fonds bloqués', 
+          color: 'bg-blue-50 text-blue-600 border-blue-200',
+          icon: Package
+        };
+      case 'shipped':
+        return { 
+          label: 'Expédié', 
+          color: 'bg-violet-50 text-violet-600 border-violet-200',
+          icon: Truck
+        };
+      case 'completed':
+        return { 
+          label: 'Terminé', 
+          color: 'bg-green-50 text-green-600 border-green-200',
+          icon: CheckCircle
+        };
+      case 'disputed':
+        return { 
+          label: 'Litige', 
+          color: 'bg-red-50 text-red-600 border-red-200',
+          icon: AlertCircle
+        };
+      default:
+        return { 
+          label: status, 
+          color: 'bg-gray-50 text-gray-600 border-gray-200',
+          icon: Package
+        };
     }
   };
 
-  if (loading) return <div className="text-center py-10">Chargement des commandes...</div>;
+  const filteredOrders = orders.filter(order => {
+    if (filter === 'buyer') return order.buyer_id === user?.id;
+    if (filter === 'seller') return order.seller_id === user?.id;
+    return true;
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // Skeleton loader
+  const OrderSkeleton = () => (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+      <div className="flex gap-4">
+        <div className="w-20 h-20 bg-gray-200 rounded-xl" />
+        <div className="flex-1 space-y-3">
+          <div className="h-5 bg-gray-200 rounded-full w-3/4" />
+          <div className="h-4 bg-gray-200 rounded-full w-1/2" />
+          <div className="h-4 bg-gray-200 rounded-full w-1/4" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-0">
-      <h1 className="text-2xl sm:text-3xl font-bold text-secondary mb-4 sm:mb-6">Mes Commandes</h1>
-      
-      {orders.length === 0 ? (
-        <div className="card text-center py-10">
-            <p className="text-gray-500">Vous n'avez aucune commande pour le moment.</p>
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-dark">Mes Commandes</h1>
+          <p className="text-gray-500 mt-1">{orders.length} commande{orders.length !== 1 ? 's' : ''} au total</p>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center bg-gray-100 rounded-xl p-1">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              filter === 'all' ? 'bg-white shadow text-dark' : 'text-gray-500 hover:text-dark'
+            }`}
+          >
+            Toutes
+          </button>
+          <button
+            onClick={() => setFilter('buyer')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              filter === 'buyer' ? 'bg-white shadow text-dark' : 'text-gray-500 hover:text-dark'
+            }`}
+          >
+            Achats
+          </button>
+          <button
+            onClick={() => setFilter('seller')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              filter === 'seller' ? 'bg-white shadow text-dark' : 'text-gray-500 hover:text-dark'
+            }`}
+          >
+            Ventes
+          </button>
+        </div>
+      </div>
+
+      {/* Orders List */}
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => <OrderSkeleton key={i} />)}
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingBag className="w-10 h-10 text-gray-300" />
+          </div>
+          <h3 className="text-xl font-bold text-dark mb-2">Aucune commande</h3>
+          <p className="text-gray-500 mb-6">
+            {filter === 'buyer' 
+              ? "Vous n'avez pas encore effectué d'achat."
+              : filter === 'seller'
+              ? "Vous n'avez pas encore reçu de commande."
+              : "Vous n'avez aucune commande pour le moment."
+            }
+          </p>
+          <Link 
+            to="/products" 
+            className="inline-flex items-center gap-2 btn-primary"
+          >
+            Explorer le marché
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">
-            {orders.map((order) => {
-                const isBuyer = user?.id === order.buyer_id;
-                return (
-                    <Link key={order.id} to={`/orders/${order.id}`} className="card flex flex-col md:flex-row gap-4 hover:shadow-md transition">
-                        <div className="w-24 h-24 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                             {order.products?.image_url && <img src={order.products.image_url} alt="" className="w-full h-full object-cover" />}
+          {filteredOrders.map((order, index) => {
+            const isBuyer = user?.id === order.buyer_id;
+            const statusConfig = getStatusConfig(order.status);
+            const StatusIcon = statusConfig.icon;
+            const otherParty = isBuyer ? order.seller : order.buyer;
+            
+            return (
+              <Link 
+                key={order.id} 
+                to={`/orders/${order.id}`} 
+                className="group block bg-white rounded-2xl border border-gray-100 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="p-5">
+                  <div className="flex gap-4">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                      {order.products?.image_url ? (
+                        <img 
+                          src={order.products.image_url} 
+                          alt="" 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-8 h-8 text-gray-300" />
                         </div>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-bold text-lg">{order.products?.title}</h3>
-                                    <p className="text-sm text-gray-500">
-                                        {isBuyer ? `Vendeur: ${order.seller?.full_name}` : `Acheteur: ${order.buyer?.full_name}`}
-                                    </p>
-                                </div>
-                                {getStatusBadge(order.status)}
-                            </div>
-                            <div className="mt-4 flex justify-between items-center">
-                                <span className="font-bold text-primary">{order.amount_ada} ADA</span>
-                                <span className="text-xs text-gray-400">Commandé le {new Date(order.created_at).toLocaleDateString()}</span>
-                            </div>
+                      )}
+                    </div>
+
+                    {/* Order Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-dark truncate group-hover:text-primary transition-colors">
+                            {order.products?.title || 'Produit'}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            {otherParty?.avatar_url ? (
+                              <img 
+                                src={otherParty.avatar_url} 
+                                alt="" 
+                                className="w-5 h-5 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white text-xs font-bold">
+                                {otherParty?.full_name?.charAt(0) || '?'}
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-500">
+                              {isBuyer ? 'Vendeur' : 'Acheteur'}: {otherParty?.full_name || 'Inconnu'}
+                            </span>
+                          </div>
                         </div>
-                    </Link>
-                );
-            })}
+
+                        {/* Status Badge */}
+                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusConfig.color}`}>
+                          <StatusIcon className="w-3.5 h-3.5" />
+                          {statusConfig.label}
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-bold text-primary">{order.amount_ada}</span>
+                          <span className="text-sm text-gray-400">ADA</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm text-gray-400">
+                            {formatDate(order.created_at)}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Role indicator */}
+                <div className={`px-5 py-2 text-xs font-medium ${
+                  isBuyer ? 'bg-green-50 text-green-600' : 'bg-violet-50 text-violet-600'
+                }`}>
+                  {isBuyer ? '🛒 Vous êtes l\'acheteur' : '🏪 Vous êtes le vendeur'}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -89,5 +276,3 @@ const Orders = () => {
 };
 
 export default Orders;
-
-
