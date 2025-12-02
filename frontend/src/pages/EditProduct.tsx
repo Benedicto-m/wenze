@@ -1,20 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { convertFCToADA, formatADA, formatFC, getExchangeRate } from '../utils/currencyConverter';
-import { Camera, Upload, ArrowLeft, Package, DollarSign, Tag, FileText, Ruler, Phone, Mail, Shirt, Footprints, TrendingUp } from 'lucide-react';
+import { convertFCToADA, convertADAToFC, formatADA, formatFC, getExchangeRate } from '../utils/currencyConverter';
+import { Camera, Upload, ArrowLeft, Package, DollarSign, Tag, FileText, Ruler, Phone, Mail, Footprints, TrendingUp } from 'lucide-react';
 
-const CreateProduct = () => {
+const EditProduct = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToast();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const NO_ESCROW_CATEGORIES = ['service', 'real_estate', 'auto'];
+  const STANDARD_CATEGORIES = ['electronics', 'fashion', 'food', 'beauty', 'diy', 'service', 'real_estate', 'auto'];
   
   const [formData, setFormData] = useState({
     title: '',
@@ -35,10 +38,63 @@ const CreateProduct = () => {
     return convertFCToADA(parseFloat(formData.price_fc));
   }, [formData.price_fc]);
 
+  useEffect(() => {
+    if (id && user) {
+      fetchProduct();
+    }
+  }, [id, user]);
+
+  const fetchProduct = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      // Vérifier que l'utilisateur est le propriétaire
+      if (data.seller_id !== user?.id) {
+        toast.error('Accès refusé', 'Vous ne pouvez modifier que vos propres produits.');
+        navigate('/products');
+        return;
+      }
+
+      // Déterminer si c'est une catégorie personnalisée
+      const isCustomCategory = !STANDARD_CATEGORIES.includes(data.category);
+      
+      // Utiliser price_fc si disponible (prioritaire), sinon convertir depuis price_ada
+      const priceInFC = data.price_fc || (data.price_ada ? convertADAToFC(data.price_ada) : 0);
+      
+      setFormData({
+        title: data.title || '',
+        description: data.description || '',
+        price_fc: priceInFC > 0 ? priceInFC.toString() : '',
+        category: isCustomCategory ? 'other' : data.category || 'electronics',
+        fashion_type: data.fashion_type || '',
+        size: data.size || '',
+        shoe_number: data.shoe_number || '',
+        custom_category: isCustomCategory ? data.category : '',
+        contact_whatsapp: data.contact_whatsapp || '',
+        contact_email: data.contact_email || '',
+      });
+
+      if (data.image_url) {
+        setPreviewUrl(data.image_url);
+      }
+
+      setLoading(false);
+    } catch (error: any) {
+      console.error('Error fetching product:', error);
+      toast.error('Erreur', 'Impossible de charger le produit.');
+      navigate('/products');
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Réinitialiser les champs selon les changements
     if (name === 'category') {
       const newData: any = { ...formData, [name]: value };
       if (value !== 'fashion') {
@@ -56,7 +112,6 @@ const CreateProduct = () => {
       setFormData(newData);
     } else if (name === 'fashion_type') {
       const newData: any = { ...formData, [name]: value };
-      // Réinitialiser taille et numéro selon le type
       if (value === 'habit') {
         newData.shoe_number = '';
       } else if (value === 'soulier') {
@@ -98,25 +153,19 @@ const CreateProduct = () => {
       return data.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Erreur d\'upload', 'Impossible de télécharger l\'image. Réessayez.');
+      toast.error('Erreur d\'upload', 'Impossible de télécharger l\'image.');
       return null;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
-    // Validation du prix en FC
-    if (!formData.price_fc || parseFloat(formData.price_fc) <= 0) {
-      toast.warning('Prix requis', 'Veuillez entrer un prix valide en Francs Congolais.');
-      return;
-    }
+    if (!user || !id) return;
 
     // Validation pour les catégories sans escrow
     if (NO_ESCROW_CATEGORIES.includes(formData.category)) {
       if (!formData.contact_whatsapp && !formData.contact_email) {
-        toast.warning('Contact requis', 'Pour cette catégorie, veuillez fournir au moins un moyen de contact (WhatsApp ou Email).');
+        toast.warning('Contact requis', 'Pour cette catégorie, veuillez fournir au moins un moyen de contact.');
         return;
       }
     }
@@ -124,6 +173,12 @@ const CreateProduct = () => {
     // Validation pour catégorie personnalisée
     if (formData.category === 'other' && !formData.custom_category.trim()) {
       toast.warning('Catégorie requise', 'Veuillez entrer le nom de votre catégorie personnalisée.');
+      return;
+    }
+
+    // Validation du prix en FC
+    if (!formData.price_fc || parseFloat(formData.price_fc) <= 0) {
+      toast.warning('Prix requis', 'Veuillez entrer un prix valide en Francs Congolais.');
       return;
     }
 
@@ -143,106 +198,146 @@ const CreateProduct = () => {
       }
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
-      let finalImageUrl = '';
+      // Garder l'image existante si aucune nouvelle image n'est uploadée
+      const { data: existingProduct } = await supabase
+        .from('products')
+        .select('image_url')
+        .eq('id', id)
+        .single();
+
+      let finalImageUrl = existingProduct?.image_url || null;
 
       if (imageFile) {
         const url = await uploadImage(imageFile);
         if (url) finalImageUrl = url;
         else {
-          setLoading(false);
+          setSaving(false);
           return;
         }
       }
 
-      // Construire la catégorie finale (avec custom_category si applicable)
+      // Construire la catégorie finale
       const finalCategory = formData.category === 'other' 
         ? formData.custom_category.trim() 
         : formData.category;
 
-      // Construire l'objet de données de manière propre
-      // price_fc est la valeur fixe, price_ada sera calculé à l'affichage selon le taux actuel
-      const productData: any = {
-        seller_id: user.id,
+      const updateData: any = {
         title: formData.title,
         description: formData.description,
-        price_fc: parseFloat(formData.price_fc), // Prix fixe en FC (ne change jamais)
-        price_ada: priceInADA, // Prix en ADA au moment de la création (pour rétrocompatibilité)
+        price_ada: priceInADA, // Prix en ADA au moment de la mise à jour
         category: finalCategory,
-        status: 'available',
       };
 
-      // Ajouter l'image si elle existe
-      if (finalImageUrl) {
-        productData.image_url = finalImageUrl;
+      // Ajouter price_fc seulement si la valeur est valide
+      // (la colonne pourrait ne pas exister encore si la migration n'a pas été exécutée)
+      if (formData.price_fc && !isNaN(parseFloat(formData.price_fc)) && parseFloat(formData.price_fc) > 0) {
+        updateData.price_fc = parseFloat(formData.price_fc);
       }
 
-      // Ajouter les champs Mode si applicable (uniquement si valeurs présentes)
+      // Ajouter les champs Mode seulement si applicable
       if (formData.category === 'fashion') {
-        if (formData.fashion_type && formData.fashion_type.trim()) {
-          productData.fashion_type = formData.fashion_type.trim();
+        if (formData.fashion_type) {
+          updateData.fashion_type = formData.fashion_type;
         }
-        if (formData.fashion_type === 'habit' && formData.size?.trim()) {
-          productData.size = formData.size.trim();
+        if (formData.fashion_type === 'habit' && formData.size) {
+          updateData.size = formData.size;
+        } else {
+          updateData.size = null;
         }
-        if (formData.fashion_type === 'soulier' && formData.shoe_number?.trim()) {
-          productData.shoe_number = formData.shoe_number.trim();
+        if (formData.fashion_type === 'soulier' && formData.shoe_number) {
+          updateData.shoe_number = formData.shoe_number;
+        } else {
+          updateData.shoe_number = null;
         }
+      } else {
+        updateData.fashion_type = null;
+        updateData.size = null;
+        updateData.shoe_number = null;
       }
 
       // Ajouter les contacts pour les catégories sans escrow
       if (NO_ESCROW_CATEGORIES.includes(formData.category)) {
-        if (formData.contact_whatsapp?.trim()) {
-          productData.contact_whatsapp = formData.contact_whatsapp.trim();
-        }
-        if (formData.contact_email?.trim()) {
-          productData.contact_email = formData.contact_email.trim();
-        }
+        updateData.contact_whatsapp = formData.contact_whatsapp || null;
+        updateData.contact_email = formData.contact_email || null;
+      } else {
+        updateData.contact_whatsapp = null;
+        updateData.contact_email = null;
       }
 
-      const { error, data } = await supabase
-        .from('products')
-        .insert([productData])
-        .select();
+      // Mettre à jour l'image seulement si une nouvelle a été uploadée
+      if (imageFile && finalImageUrl) {
+        updateData.image_url = finalImageUrl;
+      }
 
-      if (error) {
-        console.error('Supabase error details:', error);
-        // Vérifier si l'erreur est liée aux colonnes manquantes
-        if (error.message?.includes('column') || error.message?.includes('does not exist')) {
-          throw new Error(
-            'Erreur: Les colonnes fashion_type ou shoe_number n\'existent pas dans la base de données. ' +
-            'Veuillez exécuter la migration SQL: supabase/migrations/add_fashion_fields.sql'
-          );
+      const { error } = await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', id)
+        .eq('seller_id', user.id); // Double sécurité
+
+      if (error) throw error;
+
+      toast.success('Produit modifié !', 'Vos modifications ont été enregistrées.');
+      navigate(`/products/${id}`);
+    } catch (error: any) {
+      console.error('Error updating product:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      // Message d'erreur plus détaillé
+      let errorMessage = 'Impossible de modifier le produit.';
+      
+      if (error?.message) {
+        if (error.message.includes('column') && (error.message.includes('does not exist') || error.message.includes('n\'existe pas'))) {
+          errorMessage = 'La colonne price_fc n\'existe pas encore. Veuillez exécuter la migration SQL: supabase/migrations/add_price_fc_column.sql';
+        } else if (error.message.includes('null value') || error.message.includes('violates')) {
+          errorMessage = `Erreur de validation: ${error.message}`;
+        } else if (error.message.includes('permission') || error.message.includes('policy')) {
+          errorMessage = `Erreur de permission: ${error.message}`;
+        } else {
+          errorMessage = `${error.message}`;
         }
-        throw error;
+      } else if (error?.error_description) {
+        errorMessage = error.error_description;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
       }
       
-      toast.success('Produit publié !', 'Votre annonce est maintenant visible sur le marché.');
-      navigate('/products');
-    } catch (error: any) {
-      console.error('Error creating product:', error);
-      const errorMessage = error.message || 'Impossible de créer le produit. Réessayez.';
-      toast.error('Erreur de publication', errorMessage);
+      toast.error('Erreur de modification', errorMessage);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <svg className="animate-spin h-10 w-10 text-primary mx-auto mb-4" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <p className="text-gray-500">Chargement du produit...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-1 sm:px-0">
       {/* Header */}
       <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Link 
-          to="/products" 
+          to={`/products/${id}`} 
           className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-dark">Vendre un produit</h1>
-          <p className="text-gray-500 mt-0.5 sm:mt-1 text-sm sm:text-base">Publiez votre annonce</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-dark">Modifier le produit</h1>
+          <p className="text-gray-500 mt-0.5 sm:mt-1 text-sm sm:text-base">Mettez à jour les informations</p>
         </div>
       </div>
       
@@ -526,19 +621,19 @@ const CreateProduct = () => {
         {/* Submit Button */}
         <button 
           type="submit" 
-          disabled={loading}
+          disabled={saving}
           className="w-full bg-gradient-to-r from-primary to-blue-600 text-white font-semibold py-3.5 sm:py-4 px-6 rounded-xl hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
         >
-          {loading ? (
+          {saving ? (
             <>
               <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              Publication en cours...
+              Enregistrement...
             </>
           ) : (
-            'Publier le produit'
+            'Enregistrer les modifications'
           )}
         </button>
       </form>
@@ -546,4 +641,5 @@ const CreateProduct = () => {
   );
 };
 
-export default CreateProduct;
+export default EditProduct;
+
