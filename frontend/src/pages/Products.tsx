@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { convertADAToFC, convertFCToADA, formatFC, formatADA, getExchangeRate } from '../utils/currencyConverter';
 import { 
   Search, 
   Plus, 
@@ -17,18 +18,26 @@ import {
   Laptop,
   Briefcase,
   Home,
-  MoreHorizontal
+  MoreHorizontal,
+  UtensilsCrossed,
+  Wand2,
+  Hammer,
+  Building2,
+  Car,
+  MessageCircle
 } from 'lucide-react';
 
 interface Product {
   id: string;
   title: string;
   description: string;
-  price_ada: number;
+  price_ada: number; // Prix historique en ADA (utilisé seulement pour rétrocompatibilité)
+  price_fc?: number; // Prix fixe en FC (prioritaire si disponible)
   image_url: string;
   seller_id: string;
   category: string;
   location: string;
+  status?: string; // 'available', 'sold', 'suspended'
   created_at: string;
   profiles?: {
     full_name: string;
@@ -41,14 +50,20 @@ const Products = () => {
   const { t } = useLanguage();
   
   const CATEGORIES = [
-    { id: 'all', nameKey: 'products.all', icon: ShoppingBag },
-    { id: 'electronics', nameKey: 'products.electronics', icon: Smartphone },
-    { id: 'fashion', nameKey: 'products.fashion', icon: Shirt },
-    { id: 'digital', nameKey: 'products.digital', icon: Laptop },
-    { id: 'services', nameKey: 'products.services', icon: Briefcase },
-    { id: 'home', nameKey: 'products.home', icon: Home },
-    { id: 'other', nameKey: 'products.other', icon: MoreHorizontal },
+    { id: 'all', name: 'Tout', icon: ShoppingBag },
+    { id: 'electronics', name: 'Électronique', icon: Smartphone },
+    { id: 'fashion', name: 'Mode', icon: Shirt },
+    { id: 'food', name: 'Aliments', icon: UtensilsCrossed },
+    { id: 'beauty', name: 'Beauté & Hygiène', icon: Wand2 },
+    { id: 'diy', name: 'Bricolage & Matériaux', icon: Hammer },
+    { id: 'service', name: 'Services', icon: Briefcase },
+    { id: 'real_estate', name: 'Immobilier', icon: Building2 },
+    { id: 'auto', name: 'Auto & Moto', icon: Car },
+    { id: 'other', name: 'Autres', icon: MoreHorizontal },
   ];
+
+  // Catégories qui ne nécessitent pas d'escrow (contact direct)
+  const NO_ESCROW_CATEGORIES = ['service', 'real_estate', 'auto'];
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,11 +88,18 @@ const Products = () => {
           profiles (full_name, avatar_url, reputation_score)
         `)
         .eq('status', 'available')
+        .neq('status', 'sold') // Exclusion explicite des produits vendus
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
-      setFilteredProducts(data || []);
+      
+      // Filtrage supplémentaire côté client pour garantir qu'aucun produit vendu n'apparaisse
+      const availableProducts = (data || []).filter(product => 
+        product.status === 'available' || !product.status
+      );
+      
+      setProducts(availableProducts);
+      setFilteredProducts(availableProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -85,29 +107,124 @@ const Products = () => {
     }
   };
 
+  const STANDARD_CATEGORIES = ['electronics', 'fashion', 'food', 'beauty', 'diy', 'service', 'real_estate', 'auto'];
+
+  // Fonction pour normaliser les accents et caractères spéciaux
+  const normalizeText = (text: string): string => {
+    if (!text) return '';
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Enlever les accents
+      .replace(/[^a-z0-9\s]/g, ' ') // Remplacer caractères spéciaux par espaces
+      .replace(/\s+/g, ' ') // Remplacer multiples espaces par un seul
+      .trim();
+  };
+
+
+  // Fonction de recherche intelligente
+  const smartSearch = (product: Product, query: string): boolean => {
+    if (!query.trim()) return true;
+
+    const normalizedQuery = normalizeText(query);
+    const queryWords = normalizedQuery.split(' ').filter(word => word.length > 0);
+
+    // Normaliser les différents champs à rechercher
+    const searchableFields = {
+      title: normalizeText(product.title || ''),
+      description: normalizeText(product.description || ''),
+      sellerName: normalizeText(product.profiles?.full_name || ''),
+      category: normalizeText(product.category || ''),
+      location: normalizeText(product.location || ''),
+    };
+
+    const allSearchableText = Object.values(searchableFields).join(' ');
+
+    // 1. Recherche exacte de la phrase complète (priorité haute)
+    if (allSearchableText.includes(normalizedQuery)) {
+      return true;
+    }
+
+    // 2. Recherche par mots clés (tous les mots doivent être présents)
+    const allWordsMatch = queryWords.every(word => {
+      // Vérifier dans chaque champ
+      return Object.values(searchableFields).some(field => 
+        field.includes(word)
+      );
+    });
+
+    if (allWordsMatch && queryWords.length > 1) {
+      return true;
+    }
+
+    // 3. Recherche flexible par mot (au moins un mot correspond bien)
+    const wordMatches = queryWords.map(word => {
+      // Recherche exacte du mot
+      if (word.length >= 3) {
+        // Vérifier dans chaque champ séparément
+        const matchesInTitle = searchableFields.title.includes(word) || 
+          searchableFields.title.split(' ').some(w => w.startsWith(word) || word.startsWith(w));
+        const matchesInSeller = searchableFields.sellerName.includes(word) ||
+          searchableFields.sellerName.split(' ').some(w => w.startsWith(word) || word.startsWith(w));
+        const matchesInDescription = searchableFields.description.includes(word) ||
+          searchableFields.description.split(' ').some(w => w.startsWith(word) || word.startsWith(w));
+        const matchesInCategory = searchableFields.category.includes(word);
+        const matchesInLocation = searchableFields.location.includes(word);
+
+        return matchesInTitle || matchesInSeller || matchesInDescription || matchesInCategory || matchesInLocation;
+      }
+      
+      // Pour les mots courts (2 caractères), recherche exacte uniquement
+      return word.length === 2 && allSearchableText.includes(word);
+    });
+
+    // Si un seul mot, il doit correspondre
+    if (queryWords.length === 1) {
+      return wordMatches[0] || false;
+    }
+
+    // Si plusieurs mots, au moins un doit correspondre bien
+    return wordMatches.filter(Boolean).length >= Math.ceil(queryWords.length / 2);
+  };
+
   const filterAndSortProducts = () => {
     let filtered = [...products];
 
+    // Exclusion explicite des produits vendus (double sécurité)
+    filtered = filtered.filter(p => p.status === 'available' || !p.status);
+
     // Category filter
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+      if (selectedCategory === 'other') {
+        // Pour "Autres", on montre les catégories personnalisées (non-standard)
+        filtered = filtered.filter(p => !STANDARD_CATEGORIES.includes(p.category));
+      } else {
+        filtered = filtered.filter(p => p.category === selectedCategory);
+      }
     }
 
-    // Search filter
+    // Recherche intelligente
     if (searchQuery) {
-      filtered = filtered.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter(p => smartSearch(p, searchQuery));
     }
 
     // Sort
     switch (sortBy) {
       case 'price_low':
-        filtered.sort((a, b) => a.price_ada - b.price_ada);
+        filtered.sort((a, b) => {
+          // Utiliser price_fc si disponible, sinon convertir depuis price_ada
+          const priceA = a.price_fc || convertADAToFC(a.price_ada);
+          const priceB = b.price_fc || convertADAToFC(b.price_ada);
+          return priceA - priceB;
+        });
         break;
       case 'price_high':
-        filtered.sort((a, b) => b.price_ada - a.price_ada);
+        filtered.sort((a, b) => {
+          // Utiliser price_fc si disponible, sinon convertir depuis price_ada
+          const priceA = a.price_fc || convertADAToFC(a.price_ada);
+          const priceB = b.price_fc || convertADAToFC(b.price_ada);
+          return priceB - priceA;
+        });
         break;
       case 'recent':
       default:
@@ -182,7 +299,7 @@ const Products = () => {
               <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder={t('products.search')}
+                placeholder="Rechercher un produit, un vendeur, une catégorie..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-white/10 backdrop-blur border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition text-sm sm:text-base"
@@ -209,7 +326,7 @@ const Products = () => {
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {t(cat.nameKey)}
+                {cat.name}
               </button>
             );
           })}
@@ -219,7 +336,7 @@ const Products = () => {
       {/* Filters Bar */}
       <div className="flex items-center justify-between gap-3 mb-5 sm:mb-6">
         <p className="text-gray-500 dark:text-gray-400 text-sm">
-          <strong className="text-dark dark:text-white">{filteredProducts.length}</strong> {t('products.count', { count: filteredProducts.length })}
+          <strong className="text-dark dark:text-white">{filteredProducts.length}</strong> {filteredProducts.length === 1 ? 'produit' : 'produits'}
         </p>
 
         <div className="relative">
@@ -295,15 +412,14 @@ const Products = () => {
 
               {/* Content */}
               <div className="p-3 sm:p-4">
-                {/* Seller Info - Cliquable mais avec stopPropagation */}
-                <Link 
-                  to={`/seller/${product.seller_id}`}
-                  className="flex items-center gap-2 mb-2 sm:mb-3 group/seller relative z-20"
+                {/* Seller Info - Cliquable mais sans Link imbriqué */}
+                <div 
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     window.location.href = `/seller/${product.seller_id}`;
                   }}
+                  className="flex items-center gap-2 mb-2 sm:mb-3 group/seller relative z-20 cursor-pointer"
                 >
                   {product.profiles?.avatar_url ? (
                     <img 
@@ -327,7 +443,7 @@ const Products = () => {
                       </span>
                     </div>
                   </div>
-                </Link>
+                </div>
 
                 {/* Title */}
                 <h3 className="font-semibold text-dark dark:text-white text-sm sm:text-base mb-1.5 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
@@ -340,24 +456,56 @@ const Products = () => {
                   <span className="text-[10px] sm:text-xs truncate">{product.location || 'Goma, RDC'}</span>
                 </div>
 
-                {/* Price & Buy */}
+                {/* Price & Action */}
                 <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <span className="text-base sm:text-lg font-bold text-primary">{product.price_ada}</span>
-                    <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 ml-1">ADA</span>
+                  <div className="flex flex-col">
+                    {(() => {
+                      // Utiliser price_fc si disponible (prioritaire), sinon convertir depuis price_ada
+                      const priceInFC = product.price_fc || convertADAToFC(product.price_ada);
+                      // Recalculer l'ADA depuis le FC avec le taux actuel
+                      const priceInADA = convertFCToADA(priceInFC);
+                      
+                      return (
+                        <>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-base sm:text-lg font-bold text-dark dark:text-white">
+                              {formatFC(priceInFC)}
+                            </span>
+                            <span className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">FC</span>
+                          </div>
+                          <span className="text-[9px] text-gray-400 dark:text-gray-500">
+                            ≈ {formatADA(priceInADA)} ADA
+                          </span>
+                        </>
+                      );
+                    })()}
                   </div>
                   
-                  <div 
-                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-primary text-white text-[10px] sm:text-xs font-semibold rounded-lg sm:rounded-xl hover:bg-blue-700 active:scale-95 transition relative z-20"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.location.href = `/products/${product.id}`;
-                    }}
-                  >
-                    <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden sm:inline">Acheter</span>
-                  </div>
+                  {NO_ESCROW_CATEGORIES.includes(product.category) ? (
+                    <div 
+                      className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-green-500 text-white text-[10px] sm:text-xs font-semibold rounded-lg sm:rounded-xl hover:bg-green-600 active:scale-95 transition relative z-20"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = `/products/${product.id}`;
+                      }}
+                    >
+                      <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden sm:inline">Contacter</span>
+                    </div>
+                  ) : (
+                    <div 
+                      className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-primary text-white text-[10px] sm:text-xs font-semibold rounded-lg sm:rounded-xl hover:bg-blue-700 active:scale-95 transition relative z-20"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = `/products/${product.id}`;
+                      }}
+                    >
+                      <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden sm:inline">Acheter</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>

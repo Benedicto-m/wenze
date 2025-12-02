@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { Search, Trash2, AlertTriangle, X, Check } from 'lucide-react';
+import { Search, Trash2, AlertTriangle, X } from 'lucide-react';
 
 interface ProductWithSeller {
   id: string;
@@ -39,8 +39,22 @@ const AdminProducts = () => {
     if (user) {
       fetchProducts();
       fetchSellers();
+    } else {
+      setLoading(false);
     }
   }, [user]);
+
+  // Gérer les erreurs de chargement
+  if (!user) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
+          <h2 className="text-xl font-bold text-dark mb-2">Accès non autorisé</h2>
+          <p className="text-gray-500">Vous devez être connecté pour accéder à cette page.</p>
+        </div>
+      </div>
+    );
+  }
 
   const fetchProducts = async () => {
     try {
@@ -48,7 +62,7 @@ const AdminProducts = () => {
         .from('products')
         .select(`
           *,
-          seller:profiles!products_seller_id_fkey(id, full_name, email)
+          profiles:seller_id(id, full_name, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -56,13 +70,13 @@ const AdminProducts = () => {
 
       const formattedProducts = data?.map((p: any) => ({
         ...p,
-        seller: p.seller || { id: p.seller_id, full_name: 'Inconnu', email: '' }
+        seller: p.profiles || { id: p.seller_id, full_name: 'Inconnu', email: '' }
       })) || [];
 
       setProducts(formattedProducts);
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast.error('Erreur', 'Impossible de charger les produits.');
+      toast.error('Erreur', 'Impossible de charger les produits. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -86,27 +100,37 @@ const AdminProducts = () => {
   const handleDeleteProduct = async (productId: string) => {
     setDeleting(productId);
     try {
-      // Supprimer d'abord les messages liés
-      const { error: messagesError } = await supabase
-        .from('messages')
-        .delete()
-        .in('order_id', 
-          supabase.from('orders').select('id').eq('product_id', productId)
-        );
+      // Récupérer d'abord les IDs des commandes liées
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('product_id', productId);
+
+      const orderIds = ordersData?.map(o => o.id) || [];
+
+      // Supprimer les messages liés
+      if (orderIds.length > 0) {
+        await supabase
+          .from('messages')
+          .delete()
+          .in('order_id', orderIds);
+      }
 
       // Supprimer les ratings liés
-      const { error: ratingsError } = await supabase
-        .from('ratings')
-        .delete()
-        .in('order_id', 
-          supabase.from('orders').select('id').eq('product_id', productId)
-        );
+      if (orderIds.length > 0) {
+        await supabase
+          .from('ratings')
+          .delete()
+          .in('order_id', orderIds);
+      }
 
       // Supprimer les commandes liées
-      const { error: ordersError } = await supabase
-        .from('orders')
-        .delete()
-        .eq('product_id', productId);
+      if (orderIds.length > 0) {
+        await supabase
+          .from('orders')
+          .delete()
+          .in('id', orderIds);
+      }
 
       // Enfin, supprimer le produit
       const { error: productError } = await supabase
@@ -121,7 +145,7 @@ const AdminProducts = () => {
       fetchProducts();
     } catch (error: any) {
       console.error('Error deleting product:', error);
-      toast.error('Erreur', 'Impossible de supprimer le produit.');
+      toast.error('Erreur', 'Impossible de supprimer le produit: ' + (error.message || ''));
     } finally {
       setDeleting(null);
     }
@@ -138,8 +162,8 @@ const AdminProducts = () => {
       // Trouver les IDs des vendeurs correspondants
       const { data: sellerProfiles, error: sellerError } = await supabase
         .from('profiles')
-        .select('id')
-        .or(`full_name.ilike.%${bulkSellerName}%,full_name.ilike.%${bulkSellerName.trim()}%`);
+        .select('id, full_name')
+        .ilike('full_name', `%${bulkSellerName.trim()}%`);
 
       if (sellerError) throw sellerError;
 
@@ -167,27 +191,37 @@ const AdminProducts = () => {
 
       const productIds = productsToDelete.map(p => p.id);
 
+      // Récupérer les IDs des commandes liées
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id')
+        .in('product_id', productIds);
+
+      const orderIds = ordersData?.map(o => o.id) || [];
+
       // Supprimer les messages
-      await supabase
-        .from('messages')
-        .delete()
-        .in('order_id', 
-          supabase.from('orders').select('id').in('product_id', productIds)
-        );
+      if (orderIds.length > 0) {
+        await supabase
+          .from('messages')
+          .delete()
+          .in('order_id', orderIds);
+      }
 
       // Supprimer les ratings
-      await supabase
-        .from('ratings')
-        .delete()
-        .in('order_id', 
-          supabase.from('orders').select('id').in('product_id', productIds)
-        );
+      if (orderIds.length > 0) {
+        await supabase
+          .from('ratings')
+          .delete()
+          .in('order_id', orderIds);
+      }
 
       // Supprimer les commandes
-      await supabase
-        .from('orders')
-        .delete()
-        .in('product_id', productIds);
+      if (orderIds.length > 0) {
+        await supabase
+          .from('orders')
+          .delete()
+          .in('id', orderIds);
+      }
 
       // Supprimer les produits
       const { error: deleteError } = await supabase
@@ -206,7 +240,7 @@ const AdminProducts = () => {
       fetchProducts();
     } catch (error: any) {
       console.error('Error bulk deleting:', error);
-      toast.error('Erreur', 'Impossible de supprimer les produits.');
+      toast.error('Erreur', 'Impossible de supprimer les produits: ' + (error.message || ''));
     } finally {
       setDeleting(null);
     }

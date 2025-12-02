@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { convertADAToFC, convertFCToADA, formatFC, formatADA } from '../utils/currencyConverter';
 import { 
   Star, 
   MapPin, 
@@ -27,7 +28,8 @@ interface SellerData {
 interface Product {
   id: string;
   title: string;
-  price_ada: number;
+  price_ada: number; // Prix historique en ADA (utilisé seulement pour rétrocompatibilité)
+  price_fc?: number; // Prix fixe en FC (prioritaire si disponible)
   image_url: string;
   created_at: string;
   location: string;
@@ -309,8 +311,29 @@ const SellerProfile = () => {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-base font-bold text-primary">{product.price_ada}</span>
-                      <span className="text-[10px] text-gray-400 ml-1">ADA</span>
+                      <div className="flex flex-col">
+                        <div className="flex items-baseline gap-1">
+                          {(() => {
+                            const priceInFC = product.price_fc || convertADAToFC(product.price_ada);
+                            const priceInADA = convertFCToADA(priceInFC);
+                            return (
+                              <>
+                                <span className="text-base font-bold text-dark">
+                                  {formatFC(priceInFC)}
+                                </span>
+                                <span className="text-[10px] text-gray-400">FC</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <span className="text-[9px] text-gray-400">
+                          {(() => {
+                            const priceInFC = product.price_fc || convertADAToFC(product.price_ada);
+                            const priceInADA = convertFCToADA(priceInFC);
+                            return `≈ ${formatADA(priceInADA)} ADA`;
+                          })()}
+                        </span>
+                      </div>
                     </div>
                     <span className="flex items-center gap-1 px-2.5 py-1.5 bg-primary text-white text-[10px] font-semibold rounded-lg">
                       <ShoppingCart className="w-3 h-3" />

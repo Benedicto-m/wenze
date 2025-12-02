@@ -16,6 +16,10 @@ import ProductDetail from './pages/ProductDetail';
 import SellerProfile from './pages/SellerProfile';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import AdminProducts from './pages/AdminProducts';
+import EditProduct from './pages/EditProduct';
+import { ToastProvider } from './components/Toast';
+import { ExchangeRateProvider } from './context/ExchangeRateContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -46,7 +50,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
+        <ExchangeRateProvider>
+          <ToastProvider>
+            <Router>
         <Routes>
           {/* Auth pages - Full screen without Layout */}
           <Route path="/login" element={
@@ -79,6 +85,11 @@ function App() {
                     <CreateProduct />
                   </ProtectedRoute>
                 } />
+                <Route path="/products/:id/edit" element={
+                  <ProtectedRoute>
+                    <EditProduct />
+                  </ProtectedRoute>
+                } />
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
@@ -101,11 +112,18 @@ function App() {
                     <OrderDetail />
                   </ProtectedRoute>
                 } />
+                <Route path="/admin/products" element={
+                  <ProtectedRoute>
+                    <AdminProducts />
+                  </ProtectedRoute>
+                } />
               </Routes>
             </Layout>
           } />
         </Routes>
       </Router>
+          </ToastProvider>
+        </ExchangeRateProvider>
     </AuthProvider>
     </ThemeProvider>
   );

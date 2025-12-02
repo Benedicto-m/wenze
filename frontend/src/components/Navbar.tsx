@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { Menu, X, User as UserIcon, Wallet, LogOut, ChevronDown, Copy, Check, Settings, LayoutDashboard, ArrowLeftRight, Camera, Package, Sun, Moon, Languages } from 'lucide-react';
+import { Menu, X, User as UserIcon, Wallet, LogOut, ChevronDown, Copy, Check, Settings, LayoutDashboard, ArrowLeftRight, Camera, Package, Sun, Moon, Languages, Bell } from 'lucide-react';
 import WalletModal, { WalletData } from './WalletModal';
 
 interface Profile {
@@ -25,10 +25,19 @@ const Navbar = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [addressCopied, setAddressCopied] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchProfile();
+      fetchNotificationCount();
+      // Polling toutes les 10 secondes pour les nouvelles notifications
+      const interval = setInterval(() => {
+        fetchNotificationCount();
+      }, 10000);
+      return () => clearInterval(interval);
+    } else {
+      setNotificationCount(0);
     }
   }, [user]);
 
@@ -39,6 +48,72 @@ const Navbar = () => {
       .eq('id', user?.id)
       .single();
     if (data) setProfile(data);
+  };
+
+  const fetchNotificationCount = async () => {
+    if (!user) return;
+
+    try {
+      // Récupérer uniquement les NOUVELLES commandes de l'utilisateur (acheteur ou vendeur)
+      // Nouvelles = créées dans les dernières 24 heures
+      const oneDayAgo = new Date();
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+      const oneDayAgoISO = oneDayAgo.toISOString();
+
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('id, buyer_id, seller_id, status, created_at, updated_at, order_mode, proposed_price, final_price, escrow_status')
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .neq('status', 'completed')
+        .neq('status', 'disputed')
+        .gte('created_at', oneDayAgoISO); // Uniquement les commandes créées dans les dernières 24h
+
+      if (ordersError) {
+        console.error('Error fetching orders for notifications:', ordersError);
+        return;
+      }
+
+      let count = 0;
+
+      if (orders && orders.length > 0) {
+        // Compter uniquement les NOUVELLES commandes nécessitant une action
+        for (const order of orders) {
+          const isBuyer = order.buyer_id === user.id;
+          const isSeller = order.seller_id === user.id;
+
+          // Pour le vendeur : uniquement les NOUVELLES commandes (créées dans les dernières 24h)
+          if (isSeller) {
+            // Nouvelle commande en attente
+            if (order.status === 'pending') {
+              count++;
+            }
+            // Nouvelle commande payée (escrow ouvert)
+            else if (order.status === 'escrow_web2') {
+              count++;
+            }
+            // Nouvelle négociation en attente d'acceptation par le vendeur
+            else if (order.order_mode === 'negotiation' && order.proposed_price && !order.final_price && order.status === 'pending') {
+              count++;
+            }
+          }
+
+          // Pour l'acheteur : produit expédié (mais seulement si la commande est nouvelle)
+          if (isBuyer) {
+            if (order.status === 'shipped') {
+              count++;
+            }
+            // Négociation acceptée, paiement en attente (nouvelle)
+            if (order.order_mode === 'negotiation' && order.final_price && order.escrow_status !== 'open' && order.status === 'pending') {
+              count++;
+            }
+          }
+        }
+      }
+
+      setNotificationCount(count);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
   };
 
   const handleWalletConnect = (walletData: WalletData) => {
@@ -96,8 +171,20 @@ const Navbar = () => {
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-6">
+              {user && (
+                <Link to="/dashboard" className="font-medium hover:text-accent transition">{t('nav.dashboard')}</Link>
+              )}
               <Link to="/products" className="font-medium hover:text-accent transition">{t('nav.market')}</Link>
-              {user && <Link to="/orders" className="font-medium hover:text-accent transition">{t('nav.orders')}</Link>}
+              {user && (
+                <Link to="/orders" className="relative font-medium hover:text-accent transition flex items-center gap-2">
+                  {t('nav.orders')}
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full animate-pulse shadow-lg">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               
               {/* Language Selector */}
               <div className="relative">
@@ -380,6 +467,15 @@ const Navbar = () => {
                </button>
              </div>
              
+             {user && (
+               <Link 
+                 to="/dashboard" 
+                 className="block px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium text-lg"
+                 onClick={() => setIsMenuOpen(false)}
+               >
+                 {t('nav.dashboard')}
+               </Link>
+             )}
              <Link 
                to="/products" 
                className="block px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium text-lg"
@@ -390,10 +486,17 @@ const Navbar = () => {
              {user && (
                <Link 
                  to="/orders" 
-                 className="block px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium text-lg"
+                 className="relative block px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium text-lg"
                  onClick={() => setIsMenuOpen(false)}
                >
-                 {t('nav.orders')}
+                 <span className="flex items-center gap-2">
+                   {t('nav.orders')}
+                   {notificationCount > 0 && (
+                     <span className="flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse shadow-lg">
+                       {notificationCount > 99 ? '99+' : notificationCount}
+                     </span>
+                   )}
+                 </span>
                </Link>
              )}
              {!user && (
@@ -530,12 +633,25 @@ const Navbar = () => {
 
                   {/* Navigation Links */}
                   <Link 
-                    to="/orders" 
+                    to="/dashboard" 
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LayoutDashboard size={20} className="text-gray-400" />
+                    <span>{t('nav.dashboard')}</span>
+                  </Link>
+                  <Link 
+                    to="/orders" 
+                    className="relative flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-gray-50 active:bg-gray-100 font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Package size={20} className="text-gray-400" />
                     <span>Mes commandes</span>
+                    {notificationCount > 0 && (
+                      <span className="absolute right-4 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse shadow-lg">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </span>
+                    )}
                   </Link>
 
                   <button 
