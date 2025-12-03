@@ -2,128 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 html {
   -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
 }
 
 body {
-  @apply antialiased text-gray-900 dark:text-gray-100;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  @apply bg-white dark:bg-gray-900;
-}
-
-/* Empêche le zoom automatique sur les inputs sur iOS */
-@media screen and (max-width: 768px) {
-  input, select, textarea {
-    font-size: 16px !important;
-  }
+  @apply antialiased text-slate-900 dark:text-slate-100;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  @apply bg-white dark:bg-slate-900;
 }
 
 @layer components {
+  /* Bouton Principal : On utilise le bleu Wenze solide */
   .btn-primary {
-    @apply bg-gradient-to-r from-primary to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 active:scale-95 transform;
-  }
-  
-  .btn-secondary {
-    @apply bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 active:scale-95 transform;
-  }
-  
-  .btn-outline {
-    @apply border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200;
-  }
-  
-  .card {
-    @apply bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow duration-200;
-  }
-  
-  .card-hover {
-    @apply bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/50 hover:-translate-y-1 transition-all duration-300;
-  }
-  
-  .input-field {
-    @apply w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary dark:focus:border-primary focus:bg-white dark:focus:bg-gray-700 transition-all duration-200 outline-none text-gray-900 dark:text-gray-100;
-  }
-  
-  .input-dark {
-    @apply w-full px-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200;
-  }
-  
-  .label {
-    @apply block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2;
-  }
-  
-  .section-title {
-    @apply text-2xl md:text-3xl font-bold text-dark dark:text-white;
-  }
-  
-  .section-subtitle {
-    @apply text-gray-500 dark:text-gray-400 mt-1;
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/25 hover:bg-primary-600 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all duration-200 active:scale-95;
   }
 
-  /* Glass Effect */
-  .glass {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  .btn-secondary {
+    @apply bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-6 py-3 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-200 active:scale-95;
   }
-  
-  .glass-card {
-    @apply backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl;
+
+  .card {
+    @apply bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700;
+  }
+
+  /* Input amélioré pour correspondre au bleu */
+  .input-field {
+    @apply w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary dark:focus:border-primary focus:bg-white dark:focus:bg-slate-800 transition-all duration-200 outline-none text-slate-900 dark:text-white placeholder-slate-400;
   }
 }
 
-/* Custom scrollbar */
+/* Scrollbar alignée sur la marque */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply bg-slate-100 dark:bg-slate-900;
 }
-
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500;
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-primary/50;
 }
 
-/* Selection color */
 ::selection {
   @apply bg-primary/20 text-primary;
-}
-
-/* Focus visible */
-*:focus-visible {
-  @apply outline-none ring-2 ring-primary/50 ring-offset-2;
-}
-
-/* Animations */
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
 }

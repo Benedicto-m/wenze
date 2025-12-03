@@ -1,22 +1,31 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class', // Active le dark mode basé sur la classe 'dark'
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
+      // 👇 C'EST ICI QU'IL MANQUAIT L'OBJET 'colors'
       colors: {
-        primary: '#0056D2',
-        secondary: '#FFFFFF',
-        dark: '#0a0a0a',
-        accent: '#E8F0FE',
-        wzp: '#F59E0B',
-        'wenze-blue': '#0056D2',
-        'wenze-dark': '#001a3d',
-        'wenze-light': '#e6f0ff',
+        primary: {
+          DEFAULT: '#0055D4',
+          50: '#E6F0FF',
+          100: '#CCE0FF',
+          200: '#99C2FF',
+          300: '#66A3FF',
+          400: '#3385FF',
+          500: '#0055D4',
+          600: '#0044AA',
+          700: '#003380',
+          800: '#002255',
+          900: '#00112B',
+        },
+        secondary: '#0EA5E9',
       },
+      // 👆 FIN DE L'OBJET 'colors'
+
       fontFamily: {
         'sans': ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         'display': ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
@@ -30,6 +39,11 @@ export default {
         'float': 'float 6s ease-in-out infinite',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        'blob': 'blob 7s infinite',
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'slide-up': 'slideUp 0.8s ease-out forwards',
+        'float': 'float 6s ease-in-out infinite',
+        'bounce-slow': 'bounce 3s infinite',
       },
       keyframes: {
         fadeIn: {
@@ -60,6 +74,24 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        }
       },
       boxShadow: {
         'glow': '0 0 40px -10px rgba(0, 86, 210, 0.3)',

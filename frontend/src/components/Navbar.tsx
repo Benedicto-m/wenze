@@ -1,12 +1,29 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { useLanguage } from '../context/LanguageContext';
-import { supabase } from '../lib/supabase';
-import { Menu, X, User as UserIcon, Wallet, LogOut, ChevronDown, Copy, Check, Settings, LayoutDashboard, ArrowLeftRight, Camera, Package, Sun, Moon, Languages, Bell } from 'lucide-react';
-import WalletModal, { WalletData } from './WalletModal';
-import { logger } from '../utils/logger';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { useLanguage } from "../context/LanguageContext";
+import { supabase } from "../lib/supabase";
+import {
+  Menu,
+  X,
+  User as UserIcon,
+  Wallet,
+  LogOut,
+  ChevronDown,
+  Copy,
+  Check,
+  Settings,
+  LayoutDashboard,
+  ArrowLeftRight,
+  Camera,
+  Package,
+  Sun,
+  Moon,
+  Languages,
+} from "lucide-react";
+import WalletModal, { WalletData } from "./WalletModal";
+import { logger } from "../utils/logger";
 
 interface Profile {
   full_name: string | null;
@@ -21,7 +38,9 @@ const Navbar = () => {
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [connectedWallet, setConnectedWallet] = useState<WalletData | null>(null);
+  const [connectedWallet, setConnectedWallet] = useState<WalletData | null>(
+    null
+  );
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [addressCopied, setAddressCopied] = useState(false);
@@ -31,9 +50,9 @@ const Navbar = () => {
   const fetchProfile = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
-      .from('profiles')
-      .select('full_name, avatar_url')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
       .single();
     if (data) setProfile(data);
   }, [user]);
@@ -49,15 +68,17 @@ const Navbar = () => {
       const oneDayAgoISO = oneDayAgo.toISOString();
 
       const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('id, buyer_id, seller_id, status, created_at, updated_at, order_mode, proposed_price, final_price, escrow_status')
+        .from("orders")
+        .select(
+          "id, buyer_id, seller_id, status, created_at, updated_at, order_mode, proposed_price, final_price, escrow_status"
+        )
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-        .neq('status', 'completed')
-        .neq('status', 'disputed')
-        .gte('created_at', oneDayAgoISO); // Uniquement les commandes créées dans les dernières 24h
+        .neq("status", "completed")
+        .neq("status", "disputed")
+        .gte("created_at", oneDayAgoISO); // Uniquement les commandes créées dans les dernières 24h
 
       if (ordersError) {
-        logger.error('Error fetching orders for notifications:', ordersError);
+        logger.error("Error fetching orders for notifications:", ordersError);
         return;
       }
 
@@ -72,26 +93,36 @@ const Navbar = () => {
           // Pour le vendeur : uniquement les NOUVELLES commandes (créées dans les dernières 24h)
           if (isSeller) {
             // Nouvelle commande en attente
-            if (order.status === 'pending') {
+            if (order.status === "pending") {
               count++;
             }
             // Nouvelle commande payée (escrow ouvert)
-            else if (order.status === 'escrow_web2') {
+            else if (order.status === "escrow_web2") {
               count++;
             }
             // Nouvelle négociation en attente d'acceptation par le vendeur
-            else if (order.order_mode === 'negotiation' && order.proposed_price && !order.final_price && order.status === 'pending') {
+            else if (
+              order.order_mode === "negotiation" &&
+              order.proposed_price &&
+              !order.final_price &&
+              order.status === "pending"
+            ) {
               count++;
             }
           }
 
           // Pour l'acheteur : produit expédié (mais seulement si la commande est nouvelle)
           if (isBuyer) {
-            if (order.status === 'shipped') {
+            if (order.status === "shipped") {
               count++;
             }
             // Négociation acceptée, paiement en attente (nouvelle)
-            if (order.order_mode === 'negotiation' && order.final_price && order.escrow_status !== 'open' && order.status === 'pending') {
+            if (
+              order.order_mode === "negotiation" &&
+              order.final_price &&
+              order.escrow_status !== "open" &&
+              order.status === "pending"
+            ) {
               count++;
             }
           }
@@ -100,7 +131,7 @@ const Navbar = () => {
 
       setNotificationCount(count);
     } catch (error) {
-      logger.error('Error fetching notification count:', error);
+      logger.error("Error fetching notification count:", error);
     }
   }, [user]);
 
@@ -124,18 +155,22 @@ const Navbar = () => {
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      const menuElement = document.querySelector('.mobile-menu-container');
-      const buttonElement = document.querySelector('.mobile-menu-button');
-      
-      if (menuElement && !menuElement.contains(target) && 
-          buttonElement && !buttonElement.contains(target)) {
+      const menuElement = document.querySelector(".mobile-menu-container");
+      const buttonElement = document.querySelector(".mobile-menu-button");
+
+      if (
+        menuElement &&
+        !menuElement.contains(target) &&
+        buttonElement &&
+        !buttonElement.contains(target)
+      ) {
         setIsMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
 
@@ -159,7 +194,7 @@ const Navbar = () => {
   const handleSignOut = async () => {
     await signOut();
     setConnectedWallet(null);
-    navigate('/login');
+    navigate("/login");
   };
 
   const formatAddress = (address: string) => {
@@ -174,41 +209,57 @@ const Navbar = () => {
       <nav className="bg-primary text-white shadow-lg sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <img 
-                src="/logo.png" 
-                alt="WENZE" 
-                className="h-10 w-auto object-contain bg-white rounded-full p-1 shadow-md" 
+              <img
+                src="/logo.png"
+                alt="WENZE"
+                className="h-10 w-auto object-contain bg-white rounded-full p-1 shadow-md"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove(
+                    "hidden"
+                  );
                 }}
               />
               <div className="hidden h-10 w-10 bg-white rounded-full flex items-center justify-center text-primary font-extrabold shadow-md">
                 W
               </div>
-              <span className="font-bold text-2xl tracking-tight hidden sm:block">WENZE</span>
+              <span className="font-bold text-2xl tracking-tight hidden sm:block">
+                WENZE
+              </span>
             </Link>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-6">
               {user && (
-                <Link to="/dashboard" className="font-medium hover:text-accent transition">{t('nav.dashboard')}</Link>
+                <Link
+                  to="/dashboard"
+                  className="font-medium hover:text-accent transition"
+                >
+                  {t("nav.dashboard")}
+                </Link>
               )}
-              <Link to="/products" className="font-medium hover:text-accent transition">{t('nav.market')}</Link>
+              <Link
+                to="/products"
+                className="font-medium hover:text-accent transition"
+              >
+                {t("nav.market")}
+              </Link>
               {user && (
-                <Link to="/orders" className="relative font-medium hover:text-accent transition flex items-center gap-2">
-                  {t('nav.orders')}
+                <Link
+                  to="/orders"
+                  className="relative font-medium hover:text-accent transition flex items-center gap-2"
+                >
+                  {t("nav.orders")}
                   {notificationCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full animate-pulse shadow-lg">
-                      {notificationCount > 99 ? '99+' : notificationCount}
+                      {notificationCount > 99 ? "99+" : notificationCount}
                     </span>
                   )}
                 </Link>
               )}
-              
+
               {/* Language Selector */}
               <div className="relative">
                 <button
@@ -218,17 +269,21 @@ const Navbar = () => {
                   aria-label="Language selector"
                 >
                   <Languages className="w-5 h-5" />
-                  <span className="text-xs font-bold">{language.toUpperCase()}</span>
+                  <span className="text-xs font-bold">
+                    {language.toUpperCase()}
+                  </span>
                 </button>
                 {showLangDropdown && (
                   <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50">
                     <button
                       onClick={() => {
-                        setLanguage('fr');
+                        setLanguage("fr");
                         setShowLangDropdown(false);
                       }}
                       className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-2 ${
-                        language === 'fr' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700 dark:text-gray-200'
+                        language === "fr"
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       <span className="text-lg">🇫🇷</span>
@@ -236,11 +291,13 @@ const Navbar = () => {
                     </button>
                     <button
                       onClick={() => {
-                        setLanguage('sw');
+                        setLanguage("sw");
                         setShowLangDropdown(false);
                       }}
                       className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-2 ${
-                        language === 'sw' ? 'bg-primary/10 text-primary font-semibold' : 'text-gray-700 dark:text-gray-200'
+                        language === "sw"
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       <span className="text-lg">🇨🇩</span>
@@ -249,21 +306,21 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Dark/Light Mode Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-2 hover:bg-white/10 rounded-full transition"
-                title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                title={theme === "dark" ? "Mode clair" : "Mode sombre"}
                 aria-label="Toggle theme"
               >
-                {theme === 'dark' ? (
+                {theme === "dark" ? (
                   <Sun className="w-5 h-5" />
                 ) : (
                   <Moon className="w-5 h-5" />
                 )}
               </button>
-              
+
               {user ? (
                 <div className="flex items-center space-x-3 ml-4">
                   {/* AdaEx Exchange Button */}
@@ -281,13 +338,29 @@ const Navbar = () => {
                   {/* Wallet Button */}
                   {connectedWallet ? (
                     <div className="relative">
-                      <button 
-                        onClick={() => setShowWalletDropdown(!showWalletDropdown)}
-                        className="flex items-center space-x-2 px-2 py-1.5 rounded-full text-sm font-medium transition shadow-sm bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                      <button
+                        onClick={() =>
+                          setShowWalletDropdown(!showWalletDropdown)
+                        }
+                        // Changement ici : Emerald vers Cyan (plus proche du bleu)
+                        className="flex items-center space-x-2 px-2 py-1.5 rounded-full text-sm font-medium transition shadow-sm bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-500 hover:to-cyan-500 text-white border border-white/10"
                       >
-                        <img src={connectedWallet.icon} alt={connectedWallet.name} className="w-5 h-5 rounded-full bg-white/20 p-0.5" />
-                        <span>{connectedWallet.balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ₳</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform ${showWalletDropdown ? 'rotate-180' : ''}`} />
+                        <img
+                          src={connectedWallet.icon}
+                          alt={connectedWallet.name}
+                          className="w-5 h-5 rounded-full bg-white/20 p-0.5"
+                        />
+                        <span>
+                          {connectedWallet.balance.toLocaleString("fr-FR", {
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          ₳
+                        </span>
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${
+                            showWalletDropdown ? "rotate-180" : ""
+                          }`}
+                        />
                       </button>
 
                       {/* Dropdown - Compact */}
@@ -297,9 +370,17 @@ const Navbar = () => {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-400 rounded-full" />
-                                <span className="text-white text-sm font-medium">{connectedWallet.name}</span>
+                                <span className="text-white text-sm font-medium">
+                                  {connectedWallet.name}
+                                </span>
                               </div>
-                              <span className="text-emerald-400 font-bold">{connectedWallet.balance.toLocaleString('fr-FR', { maximumFractionDigits: 4 })} ADA</span>
+                              <span className="text-emerald-400 font-bold">
+                                {connectedWallet.balance.toLocaleString(
+                                  "fr-FR",
+                                  { maximumFractionDigits: 4 }
+                                )}{" "}
+                                ADA
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 bg-black/30 rounded-lg p-2">
                               <code className="flex-1 text-xs text-gray-400 font-mono truncate">
@@ -330,7 +411,7 @@ const Navbar = () => {
                       )}
                     </div>
                   ) : (
-                    <button 
+                    <button
                       onClick={() => setIsWalletModalOpen(true)}
                       className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition shadow-sm bg-white text-primary hover:bg-gray-100"
                     >
@@ -338,11 +419,13 @@ const Navbar = () => {
                       <span>Wallet</span>
                     </button>
                   )}
-                  
+
                   {/* Profile Dropdown */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      onClick={() =>
+                        setShowProfileDropdown(!showProfileDropdown)
+                      }
                       className="flex items-center gap-2 p-1.5 hover:bg-white/10 rounded-full transition"
                     >
                       {profile?.avatar_url ? (
@@ -356,7 +439,11 @@ const Navbar = () => {
                           <UserIcon size={18} />
                         </div>
                       )}
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${
+                          showProfileDropdown ? "rotate-180" : ""
+                        }`}
+                      />
                     </button>
 
                     {showProfileDropdown && (
@@ -376,8 +463,12 @@ const Navbar = () => {
                               </div>
                             )}
                             <div className="text-white">
-                              <p className="font-semibold">{profile?.full_name || 'Utilisateur'}</p>
-                              <p className="text-sm text-blue-100 truncate">{user?.email}</p>
+                              <p className="font-semibold">
+                                {profile?.full_name || "Utilisateur"}
+                              </p>
+                              <p className="text-sm text-blue-100 truncate">
+                                {user?.email}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -390,7 +481,9 @@ const Navbar = () => {
                             className="flex items-center gap-3 px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition"
                           >
                             <LayoutDashboard className="w-5 h-5 text-gray-400" />
-                            <span className="font-medium">{t('nav.dashboard')}</span>
+                            <span className="font-medium">
+                              {t("nav.dashboard")}
+                            </span>
                           </Link>
                           <Link
                             to="/profile"
@@ -398,7 +491,9 @@ const Navbar = () => {
                             className="flex items-center gap-3 px-3 py-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition"
                           >
                             <Settings className="w-5 h-5 text-gray-400" />
-                            <span className="font-medium">{t('nav.profile')}</span>
+                            <span className="font-medium">
+                              {t("nav.profile")}
+                            </span>
                           </Link>
                         </div>
 
@@ -412,7 +507,9 @@ const Navbar = () => {
                             className="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
                           >
                             <LogOut className="w-5 h-5" />
-                            <span className="font-medium">{t('nav.logout')}</span>
+                            <span className="font-medium">
+                              {t("nav.logout")}
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -421,9 +518,14 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
-                  <Link to="/login" className="font-medium hover:text-accent">{t('nav.login')}</Link>
-                  <Link to="/signup" className="bg-white text-primary font-bold px-5 py-2 rounded-full hover:bg-gray-100 transition shadow-md">
-                    {t('nav.join')}
+                  <Link to="/login" className="font-medium hover:text-accent">
+                    {t("nav.login")}
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="bg-white text-primary font-bold px-5 py-2 rounded-full hover:bg-slate-100 transition shadow-md"
+                  >
+                    {t("nav.join")}
                   </Link>
                 </div>
               )}
@@ -431,7 +533,7 @@ const Navbar = () => {
 
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center">
-              <button 
+              <button
                 className="mobile-menu-button"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
@@ -471,16 +573,18 @@ const Navbar = () => {
                           <Camera size={14} className="text-primary" />
                         </Link>
                       </div>
-                      
+
                       {/* Profile Info */}
                       <div className="flex-1 min-w-0 text-white">
                         <p className="font-semibold text-lg truncate">
-                          {profile?.full_name || 'Utilisateur'}
+                          {profile?.full_name || "Utilisateur"}
                         </p>
-                        <p className="text-sm text-blue-100 truncate">{user?.email}</p>
+                        <p className="text-sm text-blue-100 truncate">
+                          {user?.email}
+                        </p>
                       </div>
                     </div>
-                    
+
                     {/* Quick Profile Actions */}
                     <div className="grid grid-cols-2 gap-2">
                       <Link
@@ -489,7 +593,7 @@ const Navbar = () => {
                         className="flex items-center justify-center gap-2 py-2.5 bg-white/20 rounded-lg text-white text-sm font-medium active:bg-white/30 transition"
                       >
                         <Settings size={18} />
-                        <span>{t('nav.profile')}</span>
+                        <span>{t("nav.profile")}</span>
                       </Link>
                       <Link
                         to="/dashboard"
@@ -497,7 +601,7 @@ const Navbar = () => {
                         className="flex items-center justify-center gap-2 py-2.5 bg-white/20 rounded-lg text-white text-sm font-medium active:bg-white/30 transition"
                       >
                         <LayoutDashboard size={18} />
-                        <span>{t('nav.dashboard')}</span>
+                        <span>{t("nav.dashboard")}</span>
                       </Link>
                     </div>
                   </div>
@@ -510,15 +614,15 @@ const Navbar = () => {
               {/* Navigation Principale */}
               <div className="space-y-2">
                 <h3 className="px-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {t('nav.market')}
+                  {t("nav.market")}
                 </h3>
-                <Link 
-                  to="/products" 
+                <Link
+                  to="/products"
                   className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 font-medium text-base transition"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Package size={22} className="text-primary" />
-                  <span>{t('nav.market')}</span>
+                  <span>{t("nav.market")}</span>
                 </Link>
               </div>
 
@@ -527,24 +631,24 @@ const Navbar = () => {
                   <h3 className="px-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Navigation
                   </h3>
-                  <Link 
-                    to="/dashboard" 
+                  <Link
+                    to="/dashboard"
                     className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 font-medium text-base transition"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <LayoutDashboard size={22} className="text-primary" />
-                    <span>{t('nav.dashboard')}</span>
+                    <span>{t("nav.dashboard")}</span>
                   </Link>
-                  <Link 
-                    to="/orders" 
+                  <Link
+                    to="/orders"
                     className="relative flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 font-medium text-base transition"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Package size={22} className="text-primary" />
-                    <span>{t('nav.orders')}</span>
+                    <span>{t("nav.orders")}</span>
                     {notificationCount > 0 && (
                       <span className="ml-auto flex items-center justify-center min-w-[24px] h-[24px] px-2 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse shadow-lg">
-                        {notificationCount > 99 ? '99+' : notificationCount}
+                        {notificationCount > 99 ? "99+" : notificationCount}
                       </span>
                     )}
                   </Link>
@@ -555,12 +659,12 @@ const Navbar = () => {
               {user && (
                 <>
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
-                  
+
                   <div className="space-y-2">
                     <h3 className="px-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Wallet & Échange
                     </h3>
-                    
+
                     {/* AdaEx Exchange Button Mobile */}
                     <a
                       href="https://app.adaex.app/"
@@ -571,21 +675,34 @@ const Navbar = () => {
                     >
                       <ArrowLeftRight size={22} />
                       <div className="flex-1">
-                        <span className="block font-semibold">Échanger ADA ↔ FC</span>
-                        <span className="text-xs text-orange-500 dark:text-orange-400">Via Mobile Money</span>
+                        <span className="block font-semibold">
+                          Échanger ADA ↔ FC
+                        </span>
+                        <span className="text-xs text-orange-500 dark:text-orange-400">
+                          Via Mobile Money
+                        </span>
                       </div>
                     </a>
-                    
+
                     {/* Mobile Wallet Section */}
                     {connectedWallet ? (
                       <div className="bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-900/20 dark:to-cyan-900/20 rounded-xl p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <img src={connectedWallet.icon} alt={connectedWallet.name} className="w-7 h-7 rounded-lg" />
-                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{connectedWallet.name}</span>
+                            <img
+                              src={connectedWallet.icon}
+                              alt={connectedWallet.name}
+                              className="w-7 h-7 rounded-lg"
+                            />
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                              {connectedWallet.name}
+                            </span>
                           </div>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">
-                            {connectedWallet.balance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ₳
+                            {connectedWallet.balance.toLocaleString("fr-FR", {
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            ₳
                           </span>
                         </div>
                         <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-2.5 mb-3">
@@ -604,15 +721,17 @@ const Navbar = () => {
                         </button>
                       </div>
                     ) : (
-                      <button 
-                        onClick={() => { 
-                          setIsWalletModalOpen(true); 
-                          setIsMenuOpen(false); 
+                      <button
+                        onClick={() => {
+                          setIsWalletModalOpen(true);
+                          setIsMenuOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 text-left font-medium text-primary dark:text-blue-400 active:bg-blue-100 dark:active:bg-blue-900/30 transition"
                       >
                         <Wallet size={22} />
-                        <span className="font-semibold">{t('nav.connect_wallet')}</span>
+                        <span className="font-semibold">
+                          {t("nav.connect_wallet")}
+                        </span>
                       </button>
                     )}
                   </div>
@@ -621,41 +740,43 @@ const Navbar = () => {
 
               {/* Paramètres */}
               <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
-              
+
               <div className="space-y-2">
                 <h3 className="px-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Paramètres
                 </h3>
-                
+
                 {/* Language Selector Mobile */}
                 <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center gap-2">
                     <Languages size={20} className="text-primary" />
-                    <span className="font-medium text-base">Lugha / Langue</span>
+                    <span className="font-medium text-base">
+                      Lugha / Langue
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        setLanguage('fr');
+                        setLanguage("fr");
                         setIsMenuOpen(false);
                       }}
                       className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${
-                        language === 'fr' 
-                          ? 'bg-primary text-white shadow-md' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+                        language === "fr"
+                          ? "bg-primary text-white shadow-md"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       🇫🇷 FR
                     </button>
                     <button
                       onClick={() => {
-                        setLanguage('sw');
+                        setLanguage("sw");
                         setIsMenuOpen(false);
                       }}
                       className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${
-                        language === 'sw' 
-                          ? 'bg-primary text-white shadow-md' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200'
+                        language === "sw"
+                          ? "bg-primary text-white shadow-md"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       🇨🇩 SW
@@ -666,7 +787,7 @@ const Navbar = () => {
                 {/* Dark Mode Toggle Mobile */}
                 <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800">
                   <div className="flex items-center gap-2">
-                    {theme === 'dark' ? (
+                    {theme === "dark" ? (
                       <Moon size={20} className="text-primary" />
                     ) : (
                       <Sun size={20} className="text-primary" />
@@ -678,7 +799,7 @@ const Navbar = () => {
                     className="p-2.5 rounded-full bg-white dark:bg-gray-700 shadow-sm transition active:scale-95"
                     aria-label="Toggle theme"
                   >
-                    {theme === 'dark' ? (
+                    {theme === "dark" ? (
                       <Sun className="w-6 h-6 text-yellow-500" />
                     ) : (
                       <Moon className="w-6 h-6 text-gray-600" />
@@ -692,19 +813,19 @@ const Navbar = () => {
                 <>
                   <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Link 
-                      to="/login" 
+                    <Link
+                      to="/login"
                       className="block text-center py-3.5 rounded-xl border-2 border-primary font-semibold text-primary hover:bg-primary/5 active:bg-primary/10 transition"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      {t('nav.login')}
+                      {t("nav.login")}
                     </Link>
-                    <Link 
-                      to="/signup" 
+                    <Link
+                      to="/signup"
                       className="block text-center py-3.5 rounded-xl bg-primary text-white font-bold shadow-md hover:bg-blue-700 active:bg-blue-800 transition"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      {t('nav.join')}
+                      {t("nav.join")}
                     </Link>
                   </div>
                 </>
@@ -714,15 +835,15 @@ const Navbar = () => {
               {user && (
                 <>
                   <div className="h-px bg-gradient-to-r from-transparent via-red-200 to-transparent dark:via-red-800"></div>
-                  <button 
-                    onClick={() => { 
-                      handleSignOut(); 
-                      setIsMenuOpen(false); 
-                    }} 
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
                     className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 text-white font-bold text-base shadow-lg transition transform active:scale-95"
                   >
                     <LogOut size={24} />
-                    <span>{t('nav.logout')}</span>
+                    <span>{t("nav.logout")}</span>
                   </button>
                 </>
               )}
@@ -732,7 +853,7 @@ const Navbar = () => {
       </nav>
 
       {/* Wallet Modal */}
-      <WalletModal 
+      <WalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
         onConnect={handleWalletConnect}
@@ -740,8 +861,8 @@ const Navbar = () => {
 
       {/* Click outside to close dropdowns */}
       {(showWalletDropdown || showProfileDropdown || showLangDropdown) && (
-        <div 
-          className="fixed inset-0 z-30" 
+        <div
+          className="fixed inset-0 z-30"
           onClick={() => {
             setShowWalletDropdown(false);
             setShowProfileDropdown(false);
@@ -749,7 +870,6 @@ const Navbar = () => {
           }}
         />
       )}
-
     </>
   );
 };
