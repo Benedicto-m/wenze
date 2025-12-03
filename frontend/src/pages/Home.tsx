@@ -160,7 +160,7 @@ const Home = () => {
 
       {/* 2. STATS STRIP (Design "Skewed" de Version A) */}
       <div className="relative -mt-20 mx-4 lg:mx-20 z-20">
-        <div className="bg-primary hover:bg-primary-600 transition-colors duration-500 rounded-3xl shadow-xl shadow-primary/20 transform -rotate-1 hover:rotate-0 transition-transform duration-300">
+        <div className="bg-primary hover:bg-primary-600 rounded-3xl shadow-xl shadow-primary/20 transform -rotate-1 hover:rotate-0 transition-all duration-300">
           <div className="py-8 px-4 sm:px-12 flex flex-wrap justify-between items-center gap-8 text-white transform rotate-1 hover:rotate-0 transition-transform duration-300">
             <StatItem
               label={t("home.stats.users") || "Utilisateurs"}
