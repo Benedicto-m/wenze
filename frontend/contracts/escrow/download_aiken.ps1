@@ -7,7 +7,7 @@ Write-Host ""
 $toolsDir = "$env:USERPROFILE\Tools\Aiken"
 if (-not (Test-Path $toolsDir)) {
     New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-    Write-Host "✅ Dossier créé: $toolsDir" -ForegroundColor Green
+    Write-Host "Dossier cree: $toolsDir" -ForegroundColor Green
 }
 
 Write-Host "📥 Téléchargement d'Aiken depuis GitHub..." -ForegroundColor Yellow
@@ -34,7 +34,7 @@ try {
     $aikenExe = Get-ChildItem -Path $extractPath -Filter "aiken.exe" -Recurse | Select-Object -First 1
     if ($aikenExe) {
         Copy-Item $aikenExe.FullName -Destination "$toolsDir\aiken.exe" -Force
-        Write-Host "✅ Aiken installé dans: $toolsDir" -ForegroundColor Green
+        Write-Host "Aiken installe dans: $toolsDir" -ForegroundColor Green
     } else {
         Write-Host "❌ aiken.exe non trouvé dans l'archive" -ForegroundColor Red
         exit 1
@@ -48,16 +48,16 @@ try {
     }
     
     Write-Host ""
-    Write-Host "✨ Installation terminée!" -ForegroundColor Green
+    Write-Host "Installation terminee!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "⚠️ IMPORTANT: Fermez et rouvrez votre terminal PowerShell pour utiliser Aiken" -ForegroundColor Yellow
+    Write-Host "IMPORTANT: Fermez et rouvrez votre terminal PowerShell pour utiliser Aiken" -ForegroundColor Yellow
     Write-Host "   Ensuite, testez avec: aiken --version" -ForegroundColor Cyan
     
 } catch {
     Write-Host ""
-    Write-Host "❌ Erreur lors de l'installation: $_" -ForegroundColor Red
+    Write-Host "Erreur lors de l'installation: $_" -ForegroundColor Red
     Write-Host ""
-    Write-Host "💡 Alternative: Téléchargez manuellement depuis:" -ForegroundColor Yellow
+    Write-Host "Alternative: Telechargez manuellement depuis:" -ForegroundColor Yellow
     Write-Host "   https://github.com/aiken-lang/aiken/releases" -ForegroundColor Cyan
     Write-Host "   Extrayez aiken.exe et ajoutez-le au PATH" -ForegroundColor Yellow
 }
