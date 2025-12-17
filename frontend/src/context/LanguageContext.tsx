@@ -15,7 +15,7 @@ const translations: Record<Language, Record<string, string>> = {
   fr: {
     // Navigation
     'nav.market': 'Marché',
-    'nav.orders': 'Commandes',
+    'nav.orders': 'Mes activités',
     'nav.login': 'Connexion',
     'nav.join': 'Rejoindre',
     'nav.dashboard': 'Tableau de bord',
@@ -65,7 +65,7 @@ const translations: Record<Language, Record<string, string>> = {
     'products.buy': 'Acheter',
     
     // Orders
-    'orders.title': 'Mes Commandes',
+    'orders.title': 'Mes activités',
     'orders.empty': 'Vous n\'avez aucune commande pour le moment.',
     
     // Chat

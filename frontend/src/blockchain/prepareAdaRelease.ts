@@ -19,11 +19,13 @@ export interface ReleaseResult {
  * @param orderId - ID de la commande
  * @param sellerAddress - Adresse du vendeur (destinataire)
  * @param lucidInstance - Instance Lucid optionnelle
+ * @param expectedAmountAda - Montant attendu en ADA (pour filtrer le bon UTXO)
  */
 export const prepareAdaRelease = async (
   orderId: string,
   sellerAddress?: string,
-  lucidInstance?: Lucid | null
+  lucidInstance?: Lucid | null,
+  expectedAmountAda?: number
 ): Promise<ReleaseResult> => {
   try {
     const lucid = lucidInstance || getLucid();
@@ -43,16 +45,46 @@ export const prepareAdaRelease = async (
       };
     }
 
-    const escrowUtxo = escrowUtxos[0];
+    // Filtrer l'UTXO par montant attendu si fourni
+    let escrowUtxo = escrowUtxos[0];
+    if (expectedAmountAda && escrowUtxos.length > 1) {
+      const expectedLovelace = BigInt(Math.floor(expectedAmountAda * 1_000_000));
+      // Tolérance de 0.5 ADA pour les frais de transaction
+      const tolerance = 500_000n; // 0.5 ADA
+      
+      const matchingUtxo = escrowUtxos.find(utxo => {
+        const utxoLovelace = utxo.assets?.lovelace || 0n;
+        const diff = utxoLovelace > expectedLovelace 
+          ? utxoLovelace - expectedLovelace 
+          : expectedLovelace - utxoLovelace;
+        return diff <= tolerance;
+      });
+      
+      if (matchingUtxo) {
+        escrowUtxo = matchingUtxo;
+        console.log('✅ UTXO filtré par montant attendu:', expectedAmountAda, 'ADA');
+      } else {
+        console.warn('⚠️ Aucun UTXO ne correspond au montant attendu. Utilisation du premier UTXO.');
+        console.warn('   Montant attendu:', expectedAmountAda, 'ADA');
+        console.warn('   UTXOs disponibles:', escrowUtxos.map(u => ({
+          txHash: u.txHash,
+          amount: Number(u.assets?.lovelace || 0n) / 1_000_000
+        })));
+      }
+    }
+    
+    // Obtenir l'adresse de l'acheteur (nécessaire pour signer la transaction de libération)
+    const buyerAddress = await lucid.wallet.address();
     
     console.log('🔓 Libération des fonds de l\'escrow...');
     console.log('📋 Détails:');
     console.log('   - ID Commande:', orderId);
+    console.log('   - Acheteur (signataire):', buyerAddress);
     console.log('   - Vendeur (destinataire):', sellerAddress);
-    console.log('   - Montant:', (Number(escrowUtxo.assets.lovelace) / 1_000_000).toFixed(6), 'ADA');
+    console.log('   - Montant:', (Number(escrowUtxo.assets?.lovelace || 0n) / 1_000_000).toFixed(6), 'ADA');
 
-    // Libérer les fonds
-    const txHash = await releaseFundsFromEscrow(escrowUtxo, sellerAddress, lucid);
+    // Libérer les fonds (l'acheteur signe pour libérer vers le vendeur)
+    const txHash = await releaseFundsFromEscrow(escrowUtxo, sellerAddress, buyerAddress, lucid);
     
     console.log('✅ Fonds libérés avec succès');
     console.log('📋 Hash de transaction:', txHash);

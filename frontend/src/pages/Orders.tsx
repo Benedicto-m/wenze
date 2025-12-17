@@ -122,7 +122,9 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-dark dark:text-white">{t('orders.title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">{orders.length} {t('orders.title') === 'Mes Commandes' ? `commande${orders.length !== 1 ? 's' : ''} au total` : `agizo${orders.length !== 1 ? 's' : ''} jumla`}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {orders.length} {t('orders.title') === 'Mes activités' ? `activité${orders.length !== 1 ? 's' : ''} au total` : `agizo${orders.length !== 1 ? 's' : ''} jumla`}
+          </p>
         </div>
 
         {/* Filter Tabs */}
@@ -133,7 +135,7 @@ const Orders = () => {
               filter === 'all' ? 'bg-white shadow text-dark' : 'text-gray-500 hover:text-dark'
             }`}
           >
-            {t('orders.title') === 'Mes Commandes' ? 'Toutes' : 'Zote'}
+            {t('orders.title') === 'Mes activités' ? 'Toutes' : 'Zote'}
           </button>
           <button
             onClick={() => setFilter('buyer')}
@@ -141,7 +143,7 @@ const Orders = () => {
               filter === 'buyer' ? 'bg-white dark:bg-gray-800 shadow text-dark dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-dark dark:hover:text-white'
             }`}
           >
-            {t('orders.title') === 'Mes Commandes' ? 'Achats' : 'Kununua'}
+            {t('orders.title') === 'Mes activités' ? 'Achats' : 'Kununua'}
           </button>
           <button
             onClick={() => setFilter('seller')}
@@ -149,7 +151,7 @@ const Orders = () => {
               filter === 'seller' ? 'bg-white dark:bg-gray-800 shadow text-dark dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-dark dark:hover:text-white'
             }`}
           >
-            {t('orders.title') === 'Mes Commandes' ? 'Ventes' : 'Kuuzwa'}
+            {t('orders.title') === 'Mes activités' ? 'Ventes' : 'Kuuzwa'}
           </button>
         </div>
       </div>
@@ -167,9 +169,9 @@ const Orders = () => {
           <h3 className="text-xl font-bold text-dark dark:text-white mb-2">{t('orders.empty')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             {filter === 'buyer' 
-              ? (t('orders.title') === 'Mes Commandes' ? "Vous n'avez pas encore effectué d'achat." : "Hujanunua chochote bado.")
+              ? (t('orders.title') === 'Mes activités' ? "Vous n'avez pas encore effectué d'achat." : "Hujanunua chochote bado.")
               : filter === 'seller'
-              ? (t('orders.title') === 'Mes Commandes' ? "Vous n'avez pas encore reçu de commande." : "Hujapokea agizo lolote bado.")
+              ? (t('orders.title') === 'Mes activités' ? "Vous n'avez pas encore reçu de commande." : "Hujapokea agizo lolote bado.")
               : t('orders.empty')
             }
           </p>

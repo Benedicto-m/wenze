@@ -114,8 +114,16 @@ const OrderDetail = () => {
             }
 
             try {
+              // Calculer le montant attendu (final_price ou proposed_price ou amount_ada)
+              const expectedAmountAda = order?.final_price || order?.proposed_price || order?.amount_ada;
+              
               // Libérer les fonds de l'escrow
-              const releaseResult: ReleaseResult = await prepareAdaRelease(id!, sellerAddress, lucid);
+              const releaseResult: ReleaseResult = await prepareAdaRelease(
+                id!, 
+                sellerAddress, 
+                lucid,
+                expectedAmountAda
+              );
               
               if (!releaseResult.success) {
                 toast.error('Erreur de libération', releaseResult.message);

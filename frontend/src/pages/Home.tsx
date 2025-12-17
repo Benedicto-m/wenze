@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck,
@@ -14,9 +14,53 @@ import {
   Lock,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { supabase } from "../lib/supabase";
+
+interface HomeStats {
+  users: number;
+  orders: number;
+  completedOrders: number;
+}
 
 const Home = () => {
   const { t } = useLanguage();
+  const [stats, setStats] = useState<HomeStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // On récupère uniquement les compteurs (head: true)
+        const [{ count: usersCount }, { count: ordersCount }, { count: completedCount }] =
+          await Promise.all([
+            supabase.from("profiles").select("*", { count: "exact", head: true }),
+            supabase.from("orders").select("*", { count: "exact", head: true }),
+            supabase
+              .from("orders")
+              .select("*", { count: "exact", head: true })
+              .eq("status", "completed"),
+          ]);
+
+        setStats({
+          users: usersCount || 0,
+          orders: ordersCount || 0,
+          completedOrders: completedCount || 0,
+        });
+      } catch (e) {
+        console.warn("⚠️ Impossible de charger les statistiques de la page d'accueil :", e);
+        // En cas d'erreur, on garde des valeurs à zéro
+        setStats({
+          users: 0,
+          orders: 0,
+          completedOrders: 0,
+        });
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="space-y-12 pb-12">
@@ -164,15 +208,18 @@ const Home = () => {
           <div className="py-8 px-4 sm:px-12 flex flex-wrap justify-between items-center gap-8 text-white transform rotate-1 hover:rotate-0 transition-transform duration-300">
             <StatItem
               label={t("home.stats.users") || "Utilisateurs"}
-              value="10K+"
+              value={loadingStats ? "…" : formatStat(stats?.users ?? 0)}
             />
             <div className="hidden sm:block w-px h-12 bg-white/20" />
             <StatItem
               label={t("home.stats.transactions") || "Transactions"}
-              value="50K+"
+              value={loadingStats ? "…" : formatStat(stats?.orders ?? 0)}
             />
             <div className="hidden sm:block w-px h-12 bg-white/20" />
-            <StatItem label="Escrow" value="100%" />
+            <StatItem
+              label="Escrow complétés"
+              value={loadingStats ? "…" : formatStat(stats?.completedOrders ?? 0)}
+            />
             <div className="hidden sm:block w-px h-12 bg-white/20" />
             <StatItem label="Support" value="24/7" />
           </div>
@@ -372,6 +419,12 @@ const Home = () => {
 };
 
 // --- Composants Helpers Styled ---
+
+const formatStat = (n: number): string => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K+`;
+  return n.toString();
+};
 
 const StatItem = ({ label, value }: { label: string; value: string }) => (
   <div className="text-center group min-w-[100px]">

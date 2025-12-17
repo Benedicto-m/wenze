@@ -77,41 +77,41 @@ export const prepareAdaPayment = async (
       throw new Error('Impossible d\'obtenir l\'adresse du wallet connecté');
     }
 
-    console.log('🔒 Création de la transaction escrow...');
+    console.log('🔒 Création de la transaction escrow (verrouillage des fonds)...');
     console.log('📋 Détails de la transaction:');
     console.log('   - Acheteur:', buyerAddress.substring(0, 20) + '...');
     console.log('   - Vendeur:', sellerAddress);
     console.log('   - Montant:', amountAda, 'ADA');
     console.log('   - ID Commande:', orderId);
-    
+
     let txHash: string;
-    
+
     try {
-      // Utiliser lockFundsInEscrow pour verrouiller les fonds dans le smart contract
-      console.log('⚙️ Préparation de la transaction escrow (calcul des frais, sélection des UTXOs)...');
-      
-      // Définir le délai (7 jours par défaut)
-      const deadline = Date.now() + 7 * 24 * 60 * 60 * 1000;
-      
+      // Verrouiller les fonds dans l'UTXO d'escrow
       const escrowResult = await lockFundsInEscrow(
         orderId,
         amountAda,
         buyerAddress,
         sellerAddress,
-        deadline,
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
         lucid
       );
-      
+
       txHash = escrowResult.txHash;
       console.log('✅ Transaction escrow soumise avec succès sur la blockchain');
       console.log('📋 Hash de transaction:', txHash);
       console.log('📍 Adresse escrow:', escrowResult.escrowAddress);
-      
     } catch (escrowError: any) {
       // Gérer spécifiquement les erreurs de signature
-      if (escrowError.message?.includes('declined') || escrowError.message?.includes('user declined') || escrowError.message?.includes('rejected')) {
+      if (
+        escrowError.message?.includes('declined') ||
+        escrowError.message?.includes('user declined') ||
+        escrowError.message?.includes('rejected')
+      ) {
         console.error('❌ Transaction refusée par l\'utilisateur dans le wallet');
-        throw new Error('Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet. Veuillez approuver la transaction lorsque votre wallet vous le demande.');
+        throw new Error(
+          'Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet. Veuillez approuver la transaction lorsque votre wallet vous le demande.'
+        );
       }
       console.error('❌ Erreur lors de la création de la transaction escrow:', escrowError);
       throw escrowError;
