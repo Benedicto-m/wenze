@@ -45,48 +45,31 @@ export type EscrowRedeemer =
  * du contrat Aiken V3 ci-dessous.
  */
 export const loadEscrowValidator = async (): Promise<string> => {
-  // 1. PRIORITÉ ABSOLUE : Utiliser le script V3 (vrai contrat compilé) en forçant le type V2
-  // Le script V3 est un vrai contrat compilé, on va l'utiliser en forçant le type V2
-  console.log('🔍 Tentative de chargement du script V3...');
+  // 1. PRIORITÉ : Utiliser le script V3 (vrai contrat compilé) en forçant le type V2
   try {
     const v3Response = await fetch('/contracts/escrow.plutus.json');
-    console.log('   Réponse V3:', v3Response.status, v3Response.ok);
     if (v3Response.ok) {
       const v3Data = await v3Response.json();
-      console.log('   Données V3:', v3Data.type, v3Data.cborHex ? 'cborHex présent' : 'cborHex manquant');
       if (v3Data.cborHex) {
-        console.log('✅ Contrat escrow V3 chargé, utilisé comme V2 (workaround)');
-        // Nettoyer le cborHex : enlever espaces, virgules, etc.
         const cleanCborHex = v3Data.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé:', cleanCborHex.substring(0, 30) + '... (length:', cleanCborHex.length, ')');
-        const result = JSON.stringify({
-          type: "PlutusScriptV2", // Forcer en V2 même si c'est V3
+        return JSON.stringify({
+          type: "PlutusScriptV2",
           description: "Escrow V3 utilisé comme V2 (workaround)",
           cborHex: cleanCborHex
         });
-        console.log('   ✅ Retour du script V3 forcé en V2');
-        return result;
-      } else {
-        console.warn('⚠️ V3 chargé mais cborHex manquant');
       }
-    } else {
-      console.warn('⚠️ Réponse V3 non OK:', v3Response.status, v3Response.statusText);
     }
   } catch (error: any) {
-    console.warn('⚠️ Erreur lors du chargement du script V3:', error?.message);
+    console.warn('Erreur lors du chargement du script V3:', error?.message);
   }
   
-  // 2. Fallback : script de test V2 compatible Lucid (SEULEMENT si V3 échoue)
-  console.log('🔍 Tentative de chargement du script V2 de test (fallback)...');
+  // 2. Fallback : script de test V2 compatible Lucid
   try {
     const v2Response = await fetch('/contracts/escrow_v2_test.plutus.json');
     if (v2Response.ok) {
       const v2Data = await v2Response.json();
       if (v2Data.cborHex) {
-        console.log('⚠️ Contrat escrow V2 de test chargé (fallback - V3 non disponible)');
-        // Nettoyer le cborHex : enlever espaces, virgules, etc.
-        let cborHex = v2Data.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé:', cborHex.substring(0, 20) + '... (length:', cborHex.length, ')');
+        const cborHex = v2Data.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
         return JSON.stringify({
           ...v2Data,
           cborHex: cborHex
@@ -94,7 +77,7 @@ export const loadEscrowValidator = async (): Promise<string> => {
       }
     }
   } catch (error) {
-    console.warn('⚠️ Erreur lors du chargement du contrat V2 de test:', error);
+    console.warn('Erreur lors du chargement du contrat V2 de test:', error);
   }
 
   // 3. Dernier recours absolu : script AlwaysSucceeds PlutusV2 minimal
@@ -372,29 +355,16 @@ export const releaseFundsFromEscrow = async (
   // Utiliser une chaîne vide (format le plus simple que Lucid peut sérialiser)
   const redeemer = Data.to('');
   
-  console.log('🔓 Construction de la transaction de libération...');
-  console.log('   - UTXO txHash:', escrowUtxo.txHash);
-  console.log('   - UTXO outputIndex:', escrowUtxo.outputIndex);
-  console.log('   - Vendeur:', sellerAddress);
-  
-  // Vérifier le montant de l'UTXO
   const lovelaceAmount = escrowUtxo.assets?.lovelace || 0n;
   const adaAmount = Number(lovelaceAmount) / 1_000_000;
-  console.log('   - Montant lovelace brut:', lovelaceAmount.toString());
-  console.log('   - Montant ADA:', adaAmount.toFixed(6));
   
-  // Vérifier que le montant est raisonnable (pas 2345 ADA si on a envoyé 26.74 ADA)
   if (adaAmount > 1000) {
-    console.warn('⚠️ ATTENTION: Montant UTXO suspect (>1000 ADA). Vérifiez que c\'est le bon UTXO.');
+    console.warn('Montant UTXO suspect (>1000 ADA). Vérifiez que c\'est le bon UTXO.');
   }
   
-  // Obtenir l'adresse de l'acheteur si non fournie
   if (!buyerAddress) {
     buyerAddress = await lucid.wallet.address();
   }
-  
-  // Créer le script validateur - essayer tous les formats possibles jusqu'à trouver celui qui fonctionne
-  console.log('📝 Construction de la transaction avec script validateur...');
   
   let completedTx;
   let lastError: any;
@@ -405,7 +375,6 @@ export const releaseFundsFromEscrow = async (
       type: "PlutusV2",
       cborHex: validator.cborHex 
     };
-    console.log('   Essai format 1: PlutusV2');
     let tx = lucid
       .newTx()
       .collectFrom([escrowUtxo], redeemer)
@@ -417,10 +386,8 @@ export const releaseFundsFromEscrow = async (
     }
     
     completedTx = await tx.complete();
-    console.log('✅ Format 1 (PlutusV2) accepté');
   } catch (error1: any) {
     lastError = error1;
-    console.warn('⚠️ Format 1 échoué:', error1?.message);
     
     // Format 2: "PlutusScriptV2" (format standard)
     try {
@@ -428,7 +395,6 @@ export const releaseFundsFromEscrow = async (
         type: "PlutusScriptV2",
         cborHex: validator.cborHex 
       };
-      console.log('   Essai format 2: PlutusScriptV2');
       let tx = lucid
         .newTx()
         .collectFrom([escrowUtxo], redeemer)
@@ -440,17 +406,12 @@ export const releaseFundsFromEscrow = async (
       }
       
       completedTx = await tx.complete();
-      console.log('✅ Format 2 (PlutusScriptV2) accepté');
     } catch (error2: any) {
       lastError = error2;
-      console.warn('⚠️ Format 2 échoué:', error2?.message);
       
       // Format 3: script avec bytes (fromHex)
       try {
-        console.log('   Essai format 3: script bytes (fromHex)');
-        // Nettoyer le cborHex avant conversion
         const cleanCborHex = validator.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé pour fromHex:', cleanCborHex.substring(0, 20) + '...');
         const cborBytes = fromHex(cleanCborHex);
         const validatorScript3: any = { 
           type: "PlutusV2",
@@ -467,12 +428,10 @@ export const releaseFundsFromEscrow = async (
         }
         
         completedTx = await tx.complete();
-        console.log('✅ Format 3 (script bytes) accepté');
       } catch (error3: any) {
         lastError = error3;
         // Format 4: cborHex direct comme string
         try {
-          console.log('   Essai format 4: cborHex string direct');
           let tx = lucid
             .newTx()
             .collectFrom([escrowUtxo], redeemer)
@@ -484,9 +443,8 @@ export const releaseFundsFromEscrow = async (
           }
           
           completedTx = await tx.complete();
-          console.log('✅ Format 4 (cborHex string) accepté');
         } catch (error4: any) {
-          console.error('❌ Tous les formats ont échoué');
+          console.error('Impossible d\'attacher le script validateur');
           throw new Error(`Impossible d'attacher le script validateur. Format 1: ${error1?.message}, Format 2: ${error2?.message}, Format 3: ${error3?.message}, Format 4: ${error4?.message}`);
         }
       }
@@ -494,8 +452,6 @@ export const releaseFundsFromEscrow = async (
   }
   const signedTx = await completedTx.sign().complete();
   const txHash = await signedTx.submit();
-  
-  console.log('✅ Transaction de libération soumise:', txHash);
   
   return txHash;
 };

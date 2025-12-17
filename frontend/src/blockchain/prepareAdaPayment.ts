@@ -98,9 +98,6 @@ export const prepareAdaPayment = async (
       );
 
       txHash = escrowResult.txHash;
-      console.log('✅ Transaction escrow soumise avec succès sur la blockchain');
-      console.log('📋 Hash de transaction:', txHash);
-      console.log('📍 Adresse escrow:', escrowResult.escrowAddress);
     } catch (escrowError: any) {
       // Gérer spécifiquement les erreurs de signature
       if (
@@ -108,24 +105,17 @@ export const prepareAdaPayment = async (
         escrowError.message?.includes('user declined') ||
         escrowError.message?.includes('rejected')
       ) {
-        console.error('❌ Transaction refusée par l\'utilisateur dans le wallet');
         throw new Error(
           'Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet. Veuillez approuver la transaction lorsque votre wallet vous le demande.'
         );
       }
-      console.error('❌ Erreur lors de la création de la transaction escrow:', escrowError);
       throw escrowError;
     }
 
     // Déterminer le réseau
     const network = lucid.network === 'Preprod' ? 'Preprod Testnet' : 'Mainnet';
 
-    // Obtenir l'URL de l'explorateur
     const explorerUrl = getExplorerUrl(txHash, lucid.network === 'Preprod' ? 'testnet' : 'mainnet');
-
-    console.log(`✅ Transaction ${network} envoyée avec succès:`, txHash);
-    console.log(`🔗 Explorateur: ${explorerUrl}`);
-    console.log(`💰 Montant: ${amountAda} ADA vers ${sellerAddress.substring(0, 20)}...`);
 
     return {
       txHash,

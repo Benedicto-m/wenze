@@ -62,32 +62,17 @@ export const prepareAdaRelease = async (
       
       if (matchingUtxo) {
         escrowUtxo = matchingUtxo;
-        console.log('✅ UTXO filtré par montant attendu:', expectedAmountAda, 'ADA');
-      } else {
-        console.warn('⚠️ Aucun UTXO ne correspond au montant attendu. Utilisation du premier UTXO.');
-        console.warn('   Montant attendu:', expectedAmountAda, 'ADA');
-        console.warn('   UTXOs disponibles:', escrowUtxos.map(u => ({
-          txHash: u.txHash,
-          amount: Number(u.assets?.lovelace || 0n) / 1_000_000
-        })));
+        // UTXO filtré par montant attendu
+      } else if (escrowUtxos.length > 1) {
+        console.warn('Aucun UTXO ne correspond au montant attendu. Utilisation du premier UTXO.');
       }
     }
     
     // Obtenir l'adresse de l'acheteur (nécessaire pour signer la transaction de libération)
     const buyerAddress = await lucid.wallet.address();
     
-    console.log('🔓 Libération des fonds de l\'escrow...');
-    console.log('📋 Détails:');
-    console.log('   - ID Commande:', orderId);
-    console.log('   - Acheteur (signataire):', buyerAddress);
-    console.log('   - Vendeur (destinataire):', sellerAddress);
-    console.log('   - Montant:', (Number(escrowUtxo.assets?.lovelace || 0n) / 1_000_000).toFixed(6), 'ADA');
 
-    // Libérer les fonds (l'acheteur signe pour libérer vers le vendeur)
     const txHash = await releaseFundsFromEscrow(escrowUtxo, sellerAddress, buyerAddress, lucid);
-    
-    console.log('✅ Fonds libérés avec succès');
-    console.log('📋 Hash de transaction:', txHash);
 
     // Obtenir l'URL de l'explorateur
     const network = lucid.network === 'Preprod' ? 'testnet' : 'mainnet';
