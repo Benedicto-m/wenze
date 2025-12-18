@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { convertFCToADA, formatADA, formatFC, getExchangeRate } from '../utils/currencyConverter';
-import { Camera, Upload, ArrowLeft, Package, DollarSign, Tag, FileText, Ruler, Phone, Mail, Shirt, Footprints, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Camera, Upload, ArrowLeft, Package, DollarSign, Tag, FileText, Ruler, Phone, Mail, Shirt, Footprints, TrendingUp, AlertTriangle, CheckCircle, X, Minus, Plus } from 'lucide-react';
 
 const CreateProduct = () => {
   const navigate = useNavigate();
@@ -20,6 +20,9 @@ const CreateProduct = () => {
     title: '',
     description: '',
     price_fc: '',
+    price_type: 'fixed', // 'fixed' or 'negotiable'
+    price_min: '',
+    price_max: '',
     category: 'electronics',
     fashion_type: '',
     size: '',
@@ -27,13 +30,19 @@ const CreateProduct = () => {
     custom_category: '',
     contact_whatsapp: '',
     contact_email: '',
+    is_available: true, // For services only
   });
 
   // Calculer le prix en ADA en temps réel
   const priceInADA = useMemo(() => {
-    if (!formData.price_fc || isNaN(parseFloat(formData.price_fc))) return 0;
-    return convertFCToADA(parseFloat(formData.price_fc));
-  }, [formData.price_fc]);
+    if (formData.price_type === 'fixed' && formData.price_fc && !isNaN(parseFloat(formData.price_fc))) {
+      return convertFCToADA(parseFloat(formData.price_fc));
+    } else if (formData.price_type === 'negotiable' && formData.price_min && formData.price_max) {
+      const avgPrice = (parseFloat(formData.price_min) + parseFloat(formData.price_max)) / 2;
+      return convertFCToADA(avgPrice);
+    }
+    return 0;
+  }, [formData.price_fc, formData.price_type, formData.price_min, formData.price_max]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -64,6 +73,16 @@ const CreateProduct = () => {
       } else {
         newData.size = '';
         newData.shoe_number = '';
+      }
+      setFormData(newData);
+    } else if (name === 'price_type') {
+      // Réinitialiser les champs de prix selon le type
+      const newData: any = { ...formData, [name]: value };
+      if (value === 'fixed') {
+        newData.price_min = '';
+        newData.price_max = '';
+      } else if (value === 'negotiable') {
+        newData.price_fc = '';
       }
       setFormData(newData);
     } else {
@@ -107,10 +126,21 @@ const CreateProduct = () => {
     e.preventDefault();
     if (!user) return;
 
-    // Validation du prix en FC
-    if (!formData.price_fc || parseFloat(formData.price_fc) <= 0) {
-      toast.warning('Prix requis', 'Veuillez entrer un prix valide en Francs Congolais.');
-      return;
+    // Validation du prix selon le type
+    if (formData.price_type === 'fixed') {
+      if (!formData.price_fc || parseFloat(formData.price_fc) <= 0) {
+        toast.warning('Prix requis', 'Veuillez entrer un prix valide en Francs Congolais.');
+        return;
+      }
+    } else if (formData.price_type === 'negotiable') {
+      if (!formData.price_min || !formData.price_max || parseFloat(formData.price_min) <= 0 || parseFloat(formData.price_max) <= 0) {
+        toast.warning('Prix requis', 'Veuillez entrer des limites de prix valides (minimum et maximum).');
+        return;
+      }
+      if (parseFloat(formData.price_min) >= parseFloat(formData.price_max)) {
+        toast.warning('Prix invalide', 'Le prix minimum doit être inférieur au prix maximum.');
+        return;
+      }
     }
 
     // Validation pour les catégories sans escrow
@@ -168,11 +198,28 @@ const CreateProduct = () => {
         seller_id: user.id,
         title: formData.title,
         description: formData.description,
-        price_fc: parseFloat(formData.price_fc), // Prix fixe en FC (ne change jamais)
-        price_ada: priceInADA, // Prix en ADA au moment de la création (pour rétrocompatibilité)
+        price_type: formData.price_type,
         category: finalCategory,
         status: 'available',
       };
+
+      // Ajouter les prix selon le type
+      if (formData.price_type === 'fixed') {
+        productData.price_fc = parseFloat(formData.price_fc);
+        productData.price_ada = priceInADA;
+      } else if (formData.price_type === 'negotiable') {
+        productData.price_min = parseFloat(formData.price_min);
+        productData.price_max = parseFloat(formData.price_max);
+        // Pour l'affichage, on prend le prix moyen comme référence
+        const avgPrice = (parseFloat(formData.price_min) + parseFloat(formData.price_max)) / 2;
+        productData.price_fc = avgPrice;
+        productData.price_ada = convertFCToADA(avgPrice);
+      }
+
+      // Ajouter la disponibilité pour les services
+      if (formData.category === 'service') {
+        productData.is_available = formData.is_available;
+      }
 
       // Ajouter l'image si elle existe
       if (finalImageUrl) {
@@ -241,8 +288,8 @@ const CreateProduct = () => {
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
         </Link>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-dark">Vendre un produit</h1>
-          <p className="text-gray-500 mt-0.5 sm:mt-1 text-sm sm:text-base">Publiez votre annonce</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-dark">Publier une annonce</h1>
+          <p className="text-gray-500 mt-0.5 sm:mt-1 text-sm sm:text-base">Vendez un produit ou proposez un service</p>
         </div>
       </div>
       
@@ -252,7 +299,7 @@ const CreateProduct = () => {
           <div className="p-4 sm:p-6 border-b border-gray-100">
             <h2 className="font-semibold text-dark flex items-center gap-2 text-sm sm:text-base">
               <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              Photo du produit
+              {formData.category === 'service' ? 'Photo/Illustration du service' : 'Photo du produit'}
             </h2>
           </div>
           
@@ -290,11 +337,36 @@ const CreateProduct = () => {
           <div className="p-4 sm:p-6 border-b border-gray-100">
             <h2 className="font-semibold text-dark flex items-center gap-2 text-sm sm:text-base">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              Détails du produit
+              {formData.category === 'service' ? 'Détails du service' : 'Détails du produit'}
             </h2>
           </div>
           
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+            {/* Catégorie en premier */}
+            <div>
+              <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+                <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                Catégorie
+              </label>
+              <select 
+                name="category" 
+                required
+                className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base appearance-none"
+                value={formData.category}
+                onChange={handleChange}
+              >
+                <option value="electronics">Électronique</option>
+                <option value="fashion">Mode</option>
+                <option value="food">Aliments</option>
+                <option value="beauty">Beauté & Hygiène</option>
+                <option value="diy">Bricolage & Matériaux</option>
+                <option value="service">Services</option>
+                <option value="real_estate">Immobilier</option>
+                <option value="auto">Auto & Moto</option>
+                <option value="other">Autres</option>
+              </select>
+            </div>
+
             <div>
               <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
@@ -307,7 +379,17 @@ const CreateProduct = () => {
                 className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder="Ex: iPhone 13 Pro Max 256GB"
+                placeholder={
+                  formData.category === 'electronics' ? 'Ex: iPhone 13 Pro Max 256GB, Samsung Galaxy S21, MacBook Pro...' :
+                  formData.category === 'fashion' ? 'Ex: Chemise élégante taille M, Chaussures Nike Air Max 42...' :
+                  formData.category === 'food' ? 'Ex: Riz local 25kg, Huile de palme 5L, Fruits frais...' :
+                  formData.category === 'beauty' ? 'Ex: Crème hydratante, Parfum Chanel, Kit maquillage complet...' :
+                  formData.category === 'diy' ? 'Ex: Ciment 50kg, Tôle ondulée, Peinture blanche...' :
+                  formData.category === 'service' ? 'Ex: Réparation smartphone, Cours de français, Plomberie...' :
+                  formData.category === 'real_estate' ? 'Ex: Appartement 2 chambres, Terrain à bâtir 500m²...' :
+                  formData.category === 'auto' ? 'Ex: Toyota Corolla 2018, Moto Yamaha, Pièces détachées...' :
+                  'Ex: Entrez le titre de votre annonce...'
+                }
               />
             </div>
 
@@ -323,21 +405,50 @@ const CreateProduct = () => {
                 className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none resize-none text-sm sm:text-base"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Décrivez votre produit en détail..."
+                placeholder={
+                  formData.category === 'electronics' ? 'Décrivez votre produit : modèle, état (neuf/occasion), accessoires inclus, garantie, fonctionnalités...' :
+                  formData.category === 'fashion' ? 'Décrivez votre article : matière, couleur, taille disponible, état, marque, style...' :
+                  formData.category === 'food' ? 'Décrivez votre produit : origine, qualité, quantité disponible, fraîcheur, conditionnement, date d\'expiration...' :
+                  formData.category === 'beauty' ? 'Décrivez votre produit : type, marque, quantité, date de péremption, état, avantages...' :
+                  formData.category === 'diy' ? 'Décrivez votre matériau : type, qualité, quantité disponible, état, utilisation recommandée...' :
+                  formData.category === 'service' ? 'Décrivez votre service : compétences, expérience, durée estimée, zone de service, tarifs, disponibilité...' :
+                  formData.category === 'real_estate' ? 'Décrivez votre bien : localisation précise, superficie, nombre de pièces, équipements, état, charges, documents disponibles...' :
+                  formData.category === 'auto' ? 'Décrivez votre véhicule ou pièce : marque, modèle, année, kilométrage, état, documents disponibles (carte grise, assurance), équipements...' :
+                  'Décrivez votre produit en détail...'
+                }
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Type de prix */}
+            <div>
+              <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                Type de prix
+              </label>
+              <select 
+                name="price_type" 
+                required
+                className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base appearance-none"
+                value={formData.price_type}
+                onChange={handleChange}
+              >
+                <option value="fixed">Prix fixe</option>
+                <option value="negotiable">Prix négociable</option>
+              </select>
+            </div>
+
+            {/* Prix fixe */}
+            {formData.price_type === 'fixed' && (
               <div>
                 <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                   <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
-                  Prix (Francs Congolais)
+                  {formData.category === 'service' ? 'Tarif (Francs Congolais)' : 'Prix (Francs Congolais)'}
                 </label>
                 <div className="relative">
                   <input 
                     type="number" 
                     name="price_fc" 
-                    required
+                    required={formData.price_type === 'fixed'}
                     min="0"
                     step="100"
                     className="w-full px-3 sm:px-4 py-3 sm:py-3.5 pr-16 sm:pr-20 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base"
@@ -371,27 +482,78 @@ const CreateProduct = () => {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Prix négociable */}
+            {formData.price_type === 'negotiable' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+                    <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                    Prix minimum (FC)
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      name="price_min" 
+                      required={formData.price_type === 'negotiable'}
+                      min="0"
+                      step="100"
+                      className="w-full px-3 sm:px-4 py-3 sm:py-3.5 pr-16 sm:pr-20 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base"
+                      value={formData.price_min}
+                      onChange={handleChange}
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">FC</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                    Prix maximum (FC)
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      name="price_max" 
+                      required={formData.price_type === 'negotiable'}
+                      min="0"
+                      step="100"
+                      className="w-full px-3 sm:px-4 py-3 sm:py-3.5 pr-16 sm:pr-20 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base"
+                      value={formData.price_max}
+                      onChange={handleChange}
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">FC</span>
+                  </div>
+                </div>
+                {formData.price_min && formData.price_max && parseFloat(formData.price_min) >= parseFloat(formData.price_max) && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-xs text-red-600">⚠️ Le prix minimum doit être inférieur au prix maximum</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Disponibilité pour les services */}
+            {formData.category === 'service' && (
               <div>
-                <label className="text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2 block">Catégorie</label>
+                <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+                  <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
+                  Disponibilité
+                </label>
                 <select 
-                  name="category" 
+                  name="is_available" 
                   required
                   className="w-full px-3 sm:px-4 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition outline-none text-sm sm:text-base appearance-none"
-                  value={formData.category}
-                  onChange={handleChange}
+                  value={formData.is_available ? 'true' : 'false'}
+                  onChange={(e) => setFormData({ ...formData, is_available: e.target.value === 'true' })}
                 >
-                  <option value="electronics">Électronique</option>
-                  <option value="fashion">Mode</option>
-                  <option value="food">Aliments</option>
-                  <option value="beauty">Beauté & Hygiène</option>
-                  <option value="diy">Bricolage & Matériaux</option>
-                  <option value="service">Services</option>
-                  <option value="real_estate">Immobilier</option>
-                  <option value="auto">Auto & Moto</option>
-                  <option value="other">Autres</option>
+                  <option value="true">Disponible</option>
+                  <option value="false">Indisponible</option>
                 </select>
               </div>
-            </div>
+            )}
 
             {/* Mode - Type et dimensions */}
             {formData.category === 'fashion' && (
@@ -538,9 +700,9 @@ const CreateProduct = () => {
               </svg>
               Publication en cours...
             </>
-          ) : (
-            'Publier le produit'
-          )}
+            ) : (
+              formData.category === 'service' ? 'Publier le service' : 'Publier le produit'
+            )}
         </button>
       </form>
     </div>

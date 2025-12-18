@@ -48,7 +48,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) return <div className="p-10 text-center">Chargement...</div>;
   
   if (user) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/" />;
   }
 
   return <>{children}</>;

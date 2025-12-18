@@ -40,6 +40,7 @@ const Profile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [wzpTotal, setWzpTotal] = useState<number>(0);
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -168,6 +169,7 @@ const Profile = () => {
 
       fetchProfile();
       setSaved(true);
+      setIsEditing(false);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -175,6 +177,17 @@ const Profile = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    // Restaurer les valeurs originales
+    if (profile) {
+      setForm({
+        full_name: profile.full_name || '',
+        username: profile.username || '',
+      });
+    }
+    setIsEditing(false);
   };
 
   if (loading) {
@@ -202,28 +215,9 @@ const Profile = () => {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Retour au tableau de bord</span>
         </Link>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Mon Profil</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Gérez vos informations personnelles</p>
-          </div>
-          <button
-            onClick={handleSaveProfile}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
-          >
-            {saving ? (
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
-            ) : (
-              <>
-                <Save className="w-5 h-5" />
-                Enregistrer
-              </>
-            )}
-          </button>
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Mon Profil</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Gérez vos informations personnelles</p>
         </div>
       </div>
 
@@ -285,9 +279,9 @@ const Profile = () => {
 
             {/* Profile Info */}
             <div className="pt-16 pb-6 px-6">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {form.full_name || 'Utilisateur'}
+                  {profile?.full_name || form.full_name || 'Utilisateur'}
                 </h2>
                 {profile?.is_verified && (
                   <div className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium">
@@ -297,11 +291,23 @@ const Profile = () => {
                 )}
               </div>
               {profile?.username && (
-                <p className="text-slate-500 dark:text-slate-400 mb-6">@{profile.username}</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-4">@{profile.username}</p>
               )}
 
-              {/* Form Fields */}
-              <div className="space-y-5">
+              {/* Bouton Modifier le profil */}
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition shadow-md shadow-primary/20 mb-6"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Modifier le profil
+                </button>
+              )}
+
+              {/* Form Fields - Affichés seulement en mode édition */}
+              {isEditing && (
+                <div className="space-y-5 mb-5">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     <User className="w-4 h-4 text-slate-400" />
@@ -348,7 +354,51 @@ const Profile = () => {
                     L'email ne peut pas être modifié
                   </p>
                 </div>
+
+                {/* Boutons d'action en mode édition */}
+                <div className="flex items-center gap-3 pt-4">
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-600 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
+                  >
+                    {saving ? (
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        Enregistrer
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={saving}
+                    className="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-200 dark:hover:bg-slate-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Annuler
+                  </button>
+                </div>
               </div>
+              )}
+
+              {/* Affichage en lecture seule quand pas en mode édition */}
+              {!isEditing && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      Adresse email
+                    </label>
+                    <div className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white">
+                      {user?.email || 'Non renseigné'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

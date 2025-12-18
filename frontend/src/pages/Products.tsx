@@ -351,7 +351,7 @@ const Products = () => {
 
       {/* Products Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-5">
           {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
         </div>
       ) : filteredProducts.length === 0 ? (
@@ -375,7 +375,7 @@ const Products = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-5">
           {filteredProducts.map((product, index) => {
             const daysSinceCreation = Math.floor(
               (Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24)

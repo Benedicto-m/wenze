@@ -209,14 +209,20 @@ Voir `DEPLOY.md` pour plus de détails.
 
 ## ⚠️ État Actuel & Limitations
 
+Pour une liste détaillée des fonctionnalités implémentées et non implémentées, voir [FONCTIONNALITES.md](./FONCTIONNALITES.md)
+
 ### ✅ Fonctionnel
-- Authentification complète
-- Gestion des produits
-- Transactions avec escrow blockchain (Preprod Testnet)
-- Système de points WZP
-- Chat et négociation
-- Multi-langue (FR/SW)
+- Authentification complète (Email/Password, Google OAuth)
+- Gestion des produits (publication, édition, suppression)
+- Types de prix (fixe ou négociable avec plage min-max)
+- Disponibilité des services (disponible/indisponible)
+- Transactions avec escrow blockchain Cardano (Preprod Testnet)
+- Système de points WZP (distribution automatique)
+- Chat intégré avec statut de lecture et présence en ligne
+- Négociation de prix
+- Multi-langue (Français/Swahili)
 - Statistiques en temps réel
+- Interface moderne et responsive
 
 ### 🚧 En Développement
 - Support complet Plutus V3 (actuellement limitation avec lucid-cardano 0.10.11)

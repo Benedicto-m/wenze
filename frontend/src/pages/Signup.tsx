@@ -77,52 +77,73 @@ const Signup = () => {
     setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/` },
     });
     if (error) setError(error.message);
   };
 
   return (
-    // h-screen + overflow-hidden = Pas de scroll sur la page principale
-    <div className="h-screen w-full overflow-hidden relative flex items-center justify-center bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      {/* Background Decor */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-primary/5 to-transparent" />
-        <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-[120px] opacity-40" />
-        <div className="absolute bottom-[10%] -left-[10%] w-[400px] h-[400px] bg-cyan-400/20 rounded-full blur-[120px] opacity-40" />
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-gray-50 px-4 py-8 sm:px-6">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 via-white to-cyan-50/30" />
       </div>
 
-      <div className="relative z-10 w-full max-w-[420px] px-4">
-        {/* Header Compact */}
-        <div className="text-center mb-5">
-          <Link to="/" className="inline-flex items-center gap-2 mb-2 group">
-            <img src="/logo.png" alt="Wenze" className="h-7 w-auto" />
-            <span className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              WENZE
-            </span>
-          </Link>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-            Créer un compte
-          </h1>
-        </div>
+      {/* Main content */}
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
 
-        {/* Card Principale - max-h pour éviter le débordement sur petits écrans */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 p-6 border border-slate-100 dark:border-slate-700 max-h-[85vh] overflow-y-auto custom-scrollbar">
+        {/* Form Card */}
+        <div 
+          className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-lg animate-slide-up max-h-[85vh] overflow-y-auto"
+        >
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
+              Créer un compte
+            </h1>
+            <p className="text-gray-500 mt-1.5 sm:mt-2 text-sm">
+              Rejoignez-nous dès aujourd'hui
+            </p>
+          </div>
+
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg mb-4 flex items-center gap-2 text-xs">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm animate-slide-up flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-3">
+          {/* Google Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading}
+            className="w-full flex items-center justify-center gap-2.5 sm:gap-3 bg-white text-gray-800 font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg text-sm sm:text-base mb-5 sm:mb-6"
+          >
+            <GoogleIcon />
+            {googleLoading ? 'Connexion...' : 'Continuer avec Google'}
+          </button>
+
+          {/* Divider */}
+          <div className="relative my-5 sm:my-7">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 sm:px-4 bg-white text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider">ou</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSignup} className="space-y-4 sm:space-y-5">
             {/* Nom */}
             <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Nom complet
+              </label>
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                placeholder="Nom complet"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                placeholder="Olivier Mwatsi"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
@@ -130,11 +151,14 @@ const Signup = () => {
 
             {/* Email */}
             <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Email
+              </label>
               <input
                 type="email"
                 required
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                placeholder="Email"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                placeholder="olivier@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -142,93 +166,80 @@ const Signup = () => {
 
             {/* Password */}
             <div>
+              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1.5 sm:mb-2 uppercase tracking-wider">
+                Mot de passe
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-10"
-                  placeholder="Mot de passe"
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
               {/* Jauge minimaliste pour le mot de passe */}
-              <div className="mt-1 flex items-center gap-1.5">
+              <div className="mt-2 flex items-center gap-1.5">
                 <div
                   className={`h-1 flex-1 rounded-full transition-all ${
                     password.length > 0
                       ? password.length >= 6
                         ? "bg-green-500"
                         : "bg-red-500"
-                      : "bg-slate-200 dark:bg-slate-700"
+                      : "bg-gray-200"
                   }`}
                 />
-                <span className="text-[10px] text-slate-400">Min. 6 car.</span>
+                <span className="text-[10px] text-gray-500">Min. 6 car.</span>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] transition-all duration-200 text-sm mt-1"
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 text-sm sm:text-base"
             >
-              {loading ? "Création..." : "S'inscrire"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Création...
+                </span>
+              ) : (
+                "S'inscrire"
+              )}
             </button>
           </form>
 
-          {/* Divider Compact */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 bg-white dark:bg-slate-800 text-[10px] font-medium text-slate-400 uppercase">
-                ou
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogleSignup}
-            disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 font-medium py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm"
-          >
-            <GoogleIcon />
-            Google
-          </button>
-
-          <p className="mt-5 text-center text-sm text-slate-600 dark:text-slate-400">
-            Déjà un compte ?{" "}
-            <Link
-              to="/login"
-              className="text-primary font-bold hover:text-primary-600"
+          {/* Sign Up Link */}
+          <p className="mt-6 sm:mt-8 text-center text-gray-500 text-xs sm:text-sm">
+            Déjà un compte ?{' '}
+            <Link 
+              to="/login" 
+              className="text-violet-600 font-medium hover:text-violet-700 transition-colors"
             >
-              Connexion
+              Se connecter
             </Link>
           </p>
         </div>
 
-        {/* Footer Links (Très discret) */}
-        <div className="mt-6 flex justify-center gap-4 text-[10px] text-slate-400">
-          <a href="#" className="hover:text-primary">
-            Conditions
-          </a>
-          <a href="#" className="hover:text-primary">
-            Confidentialité
-          </a>
-          <a href="#" className="hover:text-primary">
-            Aide
-          </a>
-        </div>
+        {/* Footer */}
+        <p className="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-gray-400 px-4">
+          En continuant, vous acceptez nos{' '}
+          <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Conditions</a>
+          {' '}et{' '}
+          <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Confidentialité</a>
+        </p>
       </div>
     </div>
   );
