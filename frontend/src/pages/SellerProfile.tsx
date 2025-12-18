@@ -241,14 +241,6 @@ const SellerProfile = () => {
               </div>
               <p className="text-xs text-gray-500">Points WZP</p>
             </div>
-
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-3 sm:p-4 text-center">
-              <div className="flex items-center justify-center gap-1 text-violet-500 mb-1">
-                <Award className="w-4 h-4" />
-                <span className="font-bold text-lg sm:text-xl">{seller.reputation_score || 0}</span>
-              </div>
-              <p className="text-xs text-gray-500">Points WZP</p>
-            </div>
           </div>
 
           {/* Badges */}

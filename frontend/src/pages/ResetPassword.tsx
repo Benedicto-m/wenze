@@ -69,13 +69,13 @@ const ResetPassword = () => {
   // Loading state
   if (isValidSession === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="text-center">
-          <svg className="animate-spin h-10 w-10 text-primary mx-auto mb-4" viewBox="0 0 24 24">
+      <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a]">
+        <div className="text-center relative z-10">
+          <svg className="animate-spin h-10 w-10 text-violet-400 mx-auto mb-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
           </svg>
-          <p className="text-gray-600">Vérification en cours...</p>
+          <p className="text-white/60">Vérification en cours...</p>
         </div>
       </div>
     );
@@ -84,25 +84,37 @@ const ResetPassword = () => {
   // Invalid or expired link
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-        <div className="w-full max-w-md animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-cyan-950/30" />
+          <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-600/20 rounded-full blur-[80px] sm:blur-[120px] animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-cyan-500/15 rounded-full blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+
+        <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
+          <div 
+            className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl shadow-2xl p-8 text-center"
+            style={{ 
+              boxShadow: '0 0 60px -20px rgba(139, 92, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+            }}
+          >
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-dark mb-2">Lien invalide ou expiré</h2>
-            <p className="text-gray-500 mb-6">
+            <h2 className="text-2xl font-semibold text-white mb-2 tracking-tight">Lien invalide ou expiré</h2>
+            <p className="text-white/60 mb-6 text-sm">
               Ce lien de réinitialisation n'est plus valide. Veuillez demander un nouveau lien.
             </p>
             <Link
               to="/forgot-password"
-              className="block w-full bg-gradient-to-r from-primary to-blue-600 text-white font-semibold py-3.5 px-4 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200"
+              className="block w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 shadow-lg shadow-violet-500/25"
             >
               Demander un nouveau lien
             </Link>
             <Link
               to="/login"
-              className="block mt-4 text-gray-600 hover:text-primary transition-colors"
+              className="block mt-4 text-white/60 hover:text-white transition-colors text-sm"
             >
               Retour à la connexion
             </Link>
@@ -113,31 +125,57 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-      <div className="w-full max-w-md animate-fade-in">
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-cyan-950/30" />
+        <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-600/20 rounded-full blur-[80px] sm:blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-cyan-500/15 rounded-full blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-fuchsia-600/10 rounded-full blur-[100px] sm:blur-[150px]" />
+      </div>
+
+      {/* Subtle grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.015]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '48px 48px'
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div 
+          className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl shadow-2xl p-6 sm:p-8 animate-slide-up"
+          style={{ 
+            boxShadow: '0 0 60px -20px rgba(139, 92, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+          }}
+        >
           {/* Logo */}
           <div className="text-center mb-8">
-            <img src="/logo.png" alt="Wenze" className="h-12 mx-auto mb-6" />
+            <div className="inline-flex items-center justify-center p-6 sm:p-8 bg-white/95 dark:bg-white/95 backdrop-blur-xl rounded-3xl border-2 border-white/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1)] mb-6 relative">
+              {/* Glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-transparent to-fuchsia-500/20 rounded-3xl blur-xl -z-10" />
+              <img src="/logo.png" alt="Wenze" className="h-14 sm:h-16 w-auto drop-shadow-lg relative z-10" />
+            </div>
 
             {!success ? (
               <>
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Lock className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-violet-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-dark">Nouveau mot de passe</h2>
-                <p className="text-gray-500 mt-2">
+                <h2 className="text-2xl font-semibold text-white tracking-tight">Nouveau mot de passe</h2>
+                <p className="text-white/60 mt-2 text-sm">
                   Choisissez un nouveau mot de passe sécurisé pour votre compte.
                 </p>
               </>
             ) : (
               <>
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-dark">Mot de passe modifié !</h2>
-                <p className="text-gray-500 mt-2">
+                <h2 className="text-2xl font-semibold text-white tracking-tight">Mot de passe modifié !</h2>
+                <p className="text-white/60 mt-2 text-sm">
                   Votre mot de passe a été mis à jour avec succès.
                 </p>
               </>
@@ -147,14 +185,14 @@ const ResetPassword = () => {
           {!success ? (
             <>
               {error && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm border border-red-100 animate-slide-up">
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm animate-slide-up">
                   {error}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
                     Nouveau mot de passe
                   </label>
                   <div className="relative">
@@ -162,7 +200,7 @@ const ResetPassword = () => {
                       type={showPassword ? 'text' : 'password'}
                       required
                       minLength={6}
-                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none text-base pr-12"
+                      className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -170,23 +208,23 @@ const ResetPassword = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">Minimum 6 caractères</p>
+                  <p className="text-xs text-white/40 mt-2">Minimum 6 caractères</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
                     Confirmer le mot de passe
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       required
-                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none text-base pr-12"
+                      className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -194,16 +232,16 @@ const ResetPassword = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
                   </div>
                 </div>
 
                 {/* Password match indicator */}
                 {confirmPassword && (
-                  <div className={`flex items-center gap-2 text-sm ${password === confirmPassword ? 'text-green-600' : 'text-red-500'}`}>
+                  <div className={`flex items-center gap-2 text-sm ${password === confirmPassword ? 'text-green-400' : 'text-red-400'}`}>
                     {password === confirmPassword ? (
                       <>
                         <CheckCircle className="w-4 h-4" />
@@ -221,7 +259,7 @@ const ResetPassword = () => {
                 <button
                   type="submit"
                   disabled={loading || password !== confirmPassword}
-                  className="w-full bg-gradient-to-r from-primary to-blue-600 text-white font-semibold py-3.5 px-4 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5"
+                  className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-2.5 sm:py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 text-sm sm:text-base"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -239,7 +277,7 @@ const ResetPassword = () => {
             </>
           ) : (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-100 rounded-xl p-4 text-sm text-green-700">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-sm text-green-400">
                 <p className="font-medium mb-1 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4" />
                   Succès !
@@ -249,7 +287,7 @@ const ResetPassword = () => {
 
               <Link
                 to="/login"
-                className="block w-full text-center bg-gradient-to-r from-primary to-blue-600 text-white font-semibold py-3.5 px-4 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-200"
+                className="block w-full text-center bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium py-3 px-4 rounded-xl hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 shadow-lg shadow-violet-500/25"
               >
                 Se connecter maintenant
               </Link>

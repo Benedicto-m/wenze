@@ -126,17 +126,19 @@ const Home = () => {
             </div>
 
             {/* Titre */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white mb-6 leading-tight">
-              {t("home.title") || "Le Commerce"} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-cyan-500">
-                {t("home.subtitle") || "Réinventé en RDC"}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-black tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.05]">
+              <span className="block">
+                {t("home.title") || "Sécurisé & Rapide"}
+              </span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-cyan-400 mt-1">
+                {t("home.subtitle") || "WENZE réinvente l'échange à Goma"}
               </span>
             </h1>
 
             {/* Description */}
-            <p className="text-xl text-slate-600 dark:text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed font-medium tracking-tight">
               {t("home.description") ||
-                "Fini les arnaques. Avec notre système Escrow blockchain, l'argent est bloqué jusqu'à la livraison. Achetez, vendez, respirez."}
+                "Achetez, vendez, échangez avec une garantie de sécurité totale grâce à la technologie blockchain Cardano et à notre système d'escrow."}
             </p>
 
             {/* CTA Principal */}
@@ -168,6 +170,12 @@ const Home = () => {
 
             {/* Image Section */}
             <div className="hidden lg:block relative">
+              {/* Texte au-dessus de l'image */}
+              <div className="text-center mb-6">
+                <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-cyan-400 tracking-tight leading-tight">
+                  L'innovation made in Goma
+                </p>
+              </div>
               <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
                 <img
                   src="/image.png"
@@ -177,13 +185,27 @@ const Home = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-green-500 p-2 rounded-xl">
-                        <ShieldCheck className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-500 p-2 rounded-xl">
+                          <ShieldCheck className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-white text-sm">
+                            Sécurisé par la blockchain Cardano
+                          </p>
+                          <p className="text-xs text-slate-200">
+                            Fonds protégés en escrow
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-white text-sm">Sécurisé par Blockchain</p>
-                        <p className="text-xs text-slate-200">Fonds protégés en escrow</p>
+                      {/* Logo Cardano */}
+                      <div className="flex items-center justify-center">
+                        <img
+                          src="/cardano-logo.png"
+                          alt="Cardano"
+                          className="h-12 sm:h-14 w-auto object-contain animate-bounce-subtle"
+                        />
                       </div>
                     </div>
                   </div>
@@ -274,7 +296,7 @@ const Home = () => {
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
             {trendingProducts.slice(0, 8).map((product) => (
               <ProductCard
                 key={product.id}

@@ -44,87 +44,87 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <Link
       to={`/products/${id}`}
-      className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all duration-300 flex flex-col"
+      className="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md hover:border-primary/50 transition-all duration-300 flex flex-col"
     >
-      {/* Image Container */}
-      <div className="relative aspect-square overflow-hidden bg-slate-100 dark:bg-slate-700">
+      {/* Image Container - Plus compact */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-700">
         <img
           src={image_url || '/placeholder.png'}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
         />
         
-        {/* Badges Overlay */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        {/* Badges Overlay - Plus petits */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
           {isNew || isNewProduct ? (
-            <span className="px-2.5 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-md">
+            <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-md shadow-sm">
               Nouveau
             </span>
           ) : null}
           {isTrending ? (
-            <span className="px-2.5 py-1 bg-orange-500 text-white text-xs font-bold rounded-full shadow-md flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
+            <span className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold rounded-md shadow-sm flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
               Tendance
             </span>
           ) : null}
         </div>
 
-        {/* Vendeur Vérifié Badge */}
+        {/* Vendeur Vérifié Badge - Plus petit */}
         {seller?.is_verified && (
-          <div className="absolute top-3 right-3">
-            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-1.5 rounded-full shadow-md">
-              <ShieldCheck className="w-4 h-4 text-primary" />
+          <div className="absolute top-2 right-2">
+            <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-1 rounded-full shadow-sm">
+              <ShieldCheck className="w-3 h-3 text-primary" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col">
-        {/* Title */}
-        <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 min-h-[3rem] group-hover:text-primary transition-colors">
+      {/* Content - Plus compact */}
+      <div className="p-2.5 sm:p-3 flex-1 flex flex-col">
+        {/* Title - Plus compact */}
+        <h3 className="font-medium text-sm text-slate-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
           {title}
         </h3>
 
-        {/* Price - Very Visible */}
-        <div className="mb-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">
+        {/* Price - Mise en avant améliorée */}
+        <div className="mb-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-bold text-primary dark:text-primary-400">
               {formatFC(priceInFC)}
             </span>
-            <span className="text-sm text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
               FC
             </span>
           </div>
-          <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+          <div className="text-[10px] text-slate-400 dark:text-slate-500">
             ≈ {formatADA(price_ada)} ADA
           </div>
         </div>
 
-        {/* Seller Info */}
+        {/* Seller Info - Plus compact */}
         {seller && (
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 mb-2">
             {seller.avatar_url ? (
               <img
                 src={seller.avatar_url}
                 alt={seller.full_name}
-                className="w-6 h-6 rounded-full object-cover"
+                className="w-5 h-5 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-xs font-semibold text-primary">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-[10px] font-semibold text-primary">
                   {seller.full_name?.charAt(0).toUpperCase() || '?'}
                 </span>
               </div>
             )}
-            <span className="text-sm text-slate-600 dark:text-slate-300 truncate flex-1">
+            <span className="text-[11px] text-slate-600 dark:text-slate-300 truncate flex-1">
               {seller.full_name}
             </span>
             {seller.reputation_score > 0 && (
-              <div className="flex items-center gap-0.5">
-                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-0.5 flex-shrink-0">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
                   {seller.reputation_score.toFixed(1)}
                 </span>
               </div>
@@ -132,9 +132,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {/* Location */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-auto">
-          <MapPin className="w-3.5 h-3.5" />
+        {/* Location - Plus compact */}
+        <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 mt-auto pt-1 border-t border-slate-100 dark:border-slate-700">
+          <MapPin className="w-3 h-3 flex-shrink-0" />
           <span className="truncate">{location}</span>
         </div>
       </div>

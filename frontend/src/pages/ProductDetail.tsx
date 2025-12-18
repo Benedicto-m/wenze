@@ -13,11 +13,14 @@ import {
   ArrowLeft, 
   MapPin, 
   Clock, 
+  Clock as ClockIcon,
   Star, 
+  Shield,
   ShieldCheck, 
   ShoppingCart,
   CheckCircle,
   MessageCircle,
+  MessageSquare,
   Share2,
   Heart,
   Phone,
@@ -32,7 +35,9 @@ import {
   Hand,
   Pin,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  Smartphone,
+  Wrench
 } from 'lucide-react';
 
 interface Product {
@@ -41,6 +46,10 @@ interface Product {
   description: string;
   price_ada: number; // Prix historique en ADA (utilisé seulement pour rétrocompatibilité)
   price_fc?: number; // Prix fixe en FC (prioritaire si disponible)
+  price_type?: 'fixed' | 'negotiable'; // Type de prix
+  price_min?: number; // Prix minimum si négociable
+  price_max?: number; // Prix maximum si négociable
+  is_available?: boolean; // Disponibilité pour les services
   image_url: string;
   seller_id: string;
   status: string;
@@ -589,19 +598,64 @@ const ProductDetail = () => {
                 const priceInADA = getCurrentPriceInADA(product);
                 return (
                   <>
-                    <div className="flex items-baseline gap-3 mb-2">
-                      <span className="text-5xl sm:text-6xl font-extrabold text-slate-900 dark:text-white">
-                        {formatFC(priceInFC)}
-                      </span>
-                      <span className="text-2xl text-slate-500 dark:text-slate-400">FC</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-base text-slate-600 dark:text-slate-300">
-                      <span>≈ {formatADA(priceInADA)} ADA</span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                        Temps réel
-                      </span>
-                    </div>
+                    {/* Prix fixe ou négociable */}
+                    {product.price_type === 'fixed' || !product.price_type ? (
+                      <>
+                        <div className="flex items-baseline gap-3 mb-2">
+                          <span className="text-5xl sm:text-6xl font-extrabold text-slate-900 dark:text-white">
+                            {formatFC(priceInFC)}
+                          </span>
+                          <span className="text-2xl text-slate-500 dark:text-slate-400">FC</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-base text-slate-600 dark:text-slate-300">
+                          <span>≈ {formatADA(priceInADA)} ADA</span>
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-xs font-medium">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                            Temps réel
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-3 mb-2">
+                          <div>
+                            <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+                              {formatFC(product.price_min || 0)}
+                            </span>
+                            <span className="text-xl text-slate-500 dark:text-slate-400 mx-2">-</span>
+                            <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+                              {formatFC(product.price_max || 0)}
+                            </span>
+                            <span className="text-2xl text-slate-500 dark:text-slate-400 ml-2">FC</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium">
+                            Prix négociable
+                          </span>
+                          <span className="text-base text-slate-600 dark:text-slate-300">
+                            ≈ {formatADA(convertFCToADA(((product.price_min || 0) + (product.price_max || 0)) / 2))} ADA (moyenne)
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Badge de disponibilité pour les services */}
+                    {product.category === 'service' && (
+                      <div className="mt-3">
+                        {product.is_available !== false ? (
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            Disponible
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium">
+                            <X className="w-4 h-4" />
+                            Indisponible
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </>
                 );
               })()}

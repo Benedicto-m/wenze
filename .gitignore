@@ -36,9 +36,42 @@ Thumbs.db
 .npm/
 .eslintcache
 
-# Documentation / Guides
+# Documentation temporaire / Guides de développement
 GUIDE_*.md
 SOLUTION_*.md
 RECAP_*.md
 RESUME_*.md
 MODIFICATIONS_*.md
+AMELIORATIONS_*.md
+UI_UX_*.md
+SYNTHESE_*.md
+*.backup
+*.tmp
+*.old
+
+# Fichiers de migration temporaires (garder seulement dans supabase/migrations)
+migration_*.sql
+!supabase/migrations/*.sql
+
+# Secrets et configurations sensibles
+*.key
+*.pem
+*.p12
+*.pfx
+*.secret
+secrets/
+config/secrets/
+
+# Build artifacts
+*.map
+.vite/
+.vercel/
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# Debug
+.vscode/launch.json
+.idea/runConfigurations/

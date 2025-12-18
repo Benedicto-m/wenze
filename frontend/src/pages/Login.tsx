@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -18,6 +19,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +32,7 @@ const Login = () => {
       setError(error.message);
       setLoading(false);
     } else {
-      navigate('/dashboard');
+      navigate('/');
     }
   };
 
@@ -40,7 +42,7 @@ const Login = () => {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
+      options: { redirectTo: `${window.location.origin}/` },
     });
 
     if (error) {
@@ -50,53 +52,30 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
-      {/* Animated gradient background */}
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-gray-50 px-4 py-8 sm:px-6">
+      {/* Subtle gradient background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-950/40 via-transparent to-cyan-950/30" />
-        <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-violet-600/20 rounded-full blur-[80px] sm:blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-cyan-500/15 rounded-full blur-[60px] sm:blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-fuchsia-600/10 rounded-full blur-[100px] sm:blur-[150px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 via-white to-cyan-50/30" />
       </div>
-
-      {/* Subtle grid pattern */}
-      <div 
-        className="absolute inset-0 opacity-[0.015]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '48px 48px'
-        }}
-      />
 
       {/* Main content */}
       <div className="relative z-10 w-full max-w-[400px] sm:max-w-[420px]">
-        {/* Logo */}
-        <div className="text-center mb-8 sm:mb-10 animate-fade-in">
-          <img 
-            src="/logo.png" 
-            alt="Wenze" 
-            className="h-10 sm:h-12 mx-auto mb-4 sm:mb-6 drop-shadow-2xl"
-          />
-        </div>
 
         {/* Form Card */}
         <div 
-          className="backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up"
-          style={{ 
-            boxShadow: '0 0 60px -20px rgba(139, 92, 246, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
-          }}
+          className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-lg animate-slide-up"
         >
           <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
               Connexion
             </h1>
-            <p className="text-white/50 mt-1.5 sm:mt-2 text-sm">
+            <p className="text-gray-500 mt-1.5 sm:mt-2 text-sm">
               Accédez à votre espace
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm animate-slide-up">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm animate-slide-up">
               {error}
             </div>
           )}
@@ -115,23 +94,23 @@ const Login = () => {
           {/* Divider */}
           <div className="relative my-5 sm:my-7">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 sm:px-4 bg-transparent text-[10px] sm:text-xs text-white/30 uppercase tracking-wider">ou</span>
+              <span className="px-3 sm:px-4 bg-white text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider">ou</span>
             </div>
           </div>
 
           {/* Email Form */}
           <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
             <div>
-              <label className="block text-[10px] sm:text-xs font-medium text-white/60 mb-1.5 sm:mb-2 uppercase tracking-wider">
+              <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1.5 sm:mb-2 uppercase tracking-wider">
                 Email
               </label>
               <input
                 type="email"
                 required
-                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
                 placeholder="vous@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -140,24 +119,33 @@ const Login = () => {
 
             <div>
               <div className="flex justify-between items-center mb-1.5 sm:mb-2">
-                <label className="block text-[10px] sm:text-xs font-medium text-white/60 uppercase tracking-wider">
+                <label className="block text-[10px] sm:text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Mot de passe
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-[10px] sm:text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                  className="text-[10px] sm:text-xs text-violet-600 hover:text-violet-700 transition-colors"
                 >
                   Oublié ?
                 </Link>
               </div>
-              <input
-                type="password"
-                required
-                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all duration-200 text-sm sm:text-base"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -180,11 +168,11 @@ const Login = () => {
           </form>
 
           {/* Sign Up Link */}
-          <p className="mt-6 sm:mt-8 text-center text-white/50 text-xs sm:text-sm">
+          <p className="mt-6 sm:mt-8 text-center text-gray-500 text-xs sm:text-sm">
             Pas de compte ?{' '}
             <Link 
               to="/signup" 
-              className="text-violet-400 font-medium hover:text-violet-300 transition-colors"
+              className="text-violet-600 font-medium hover:text-violet-700 transition-colors"
             >
               Créer un compte
             </Link>
@@ -192,11 +180,11 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <p className="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-white/25 px-4">
+        <p className="mt-6 sm:mt-8 text-center text-[10px] sm:text-xs text-gray-400 px-4">
           En continuant, vous acceptez nos{' '}
-          <a href="#" className="text-white/40 hover:text-white/60 transition-colors">Conditions</a>
+          <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Conditions</a>
           {' '}et{' '}
-          <a href="#" className="text-white/40 hover:text-white/60 transition-colors">Confidentialité</a>
+          <a href="#" className="text-gray-500 hover:text-gray-700 transition-colors">Confidentialité</a>
         </p>
       </div>
     </div>
