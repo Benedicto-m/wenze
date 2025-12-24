@@ -222,8 +222,33 @@ const ProductDetail = () => {
         'Votre wallet va demander confirmation. Veuillez approuver la transaction pour continuer.'
       );
 
-      // Passer l'instance Lucid du contexte si disponible
-      const paymentPrep = await prepareAdaPayment(orderData.id, currentPriceInADA, sellerAddress || undefined, lucid || undefined);
+      // Récupérer le wallet MeshSDK (BrowserWallet) pour l'escrow Mesh
+      let walletApi: any = null;
+      if (walletConnected && wallet) {
+        try {
+          const walletId = wallet.walletId || 'nami';
+          const { BrowserWallet } = await import('@meshsdk/core');
+          const installedWallets = await BrowserWallet.getInstalledWallets();
+          const target = installedWallets.find((w: any) => w.name.toLowerCase() === walletId.toLowerCase());
+          if (target) {
+            walletApi = await BrowserWallet.enable(target.name);
+          } else {
+            console.warn('⚠️ Wallet Mesh introuvable pour id:', walletId, ' - tentative avec Nami par défaut');
+            walletApi = await BrowserWallet.enable('nami');
+          }
+        } catch (walletError) {
+          console.warn('⚠️ Impossible de récupérer le wallet MeshSDK (BrowserWallet):', walletError);
+        }
+      }
+
+      // Passer l'instance Lucid du contexte (pour détecter le réseau) et le wallet MeshSDK
+      const paymentPrep = await prepareAdaPayment(
+        orderData.id, 
+        currentPriceInADA, 
+        sellerAddress || undefined, 
+        lucid || undefined,
+        walletApi // Wallet API pour MeshSDK
+      );
 
       // Si la transaction a échoué, ne pas mettre à jour la commande ni marquer le produit comme vendu
       if (paymentPrep.status === 'failed') {

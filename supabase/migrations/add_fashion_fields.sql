@@ -25,3 +25,5 @@ COMMENT ON COLUMN products.shoe_number IS 'Numéro de chaussure (taille europée
 
 
 
+
+
