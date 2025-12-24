@@ -20,6 +20,18 @@
 
 <body class="font-display">
   <div id="root"></div>
+  <!-- Polyfill pour 'global' et autres variables Node.js (requis par MeshSDK) -->
+  <script>
+    // Polyfill pour 'global' (requis par MeshSDK et certaines dépendances Node.js)
+    if (typeof global === 'undefined') {
+      window.global = globalThis;
+      var global = globalThis;
+    }
+    // Polyfill pour 'process' si nécessaire
+    if (typeof process === 'undefined') {
+      window.process = { env: {}, browser: true };
+    }
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

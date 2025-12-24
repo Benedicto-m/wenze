@@ -1,9 +1,11 @@
 /**
  * Libère les fonds de l'escrow au vendeur après confirmation de réception
+ *
+ * Implémentation 100% Lucid + script Plutus V2 minimal (escrow sous contrôle).
  */
 
 import { getLucid } from './lucidService';
-import { releaseFundsFromEscrow, getEscrowUtxos } from './escrowContract';
+import { releaseFundsFromEscrowV2, getEscrowUtxos } from './escrowContract';
 import { Lucid } from 'lucid-cardano';
 
 export interface ReleaseResult {
@@ -25,23 +27,29 @@ export const prepareAdaRelease = async (
   orderId: string,
   sellerAddress?: string,
   lucidInstance?: Lucid | null,
-  expectedAmountAda?: number
+  expectedAmountAda?: number,
+  wallet?: any, // Conservé pour compatibilité, non utilisé dans la version Lucid-only
+  escrowTxHash?: string // Conservé pour compatibilité, non utilisé dans la version Lucid-only
 ): Promise<ReleaseResult> => {
   try {
     const lucid = lucidInstance || getLucid();
     
-    // Si l'adresse du vendeur n'est pas fournie, essayer de la récupérer depuis la commande
+    // Si l'adresse du vendeur n'est pas fournie
     if (!sellerAddress) {
-      throw new Error('Adresse du vendeur requise pour libérer les fonds');
+      return {
+        success: false,
+        message: 'Adresse du vendeur requise pour libérer les fonds',
+      };
     }
 
-    // Récupérer l'UTXO de l'escrow pour cette commande
+    // Récupérer les UTXOs de l'escrow pour cette commande
     const escrowUtxos = await getEscrowUtxos(orderId, lucid);
     
     if (escrowUtxos.length === 0) {
       return {
         success: false,
-        message: 'Aucun fonds en escrow trouvé pour cette commande. Les fonds ont peut-être déjà été libérés ou l\'escrow n\'existe pas.'
+        message:
+          'Aucun fonds en escrow trouvé pour cette commande. Les fonds ont peut-être déjà été libérés ou l’escrow n’existe pas.',
       };
     }
 
@@ -54,7 +62,8 @@ export const prepareAdaRelease = async (
       
       const matchingUtxo = escrowUtxos.find(utxo => {
         const utxoLovelace = utxo.assets?.lovelace || 0n;
-        const diff = utxoLovelace > expectedLovelace 
+        const diff =
+          utxoLovelace > expectedLovelace
           ? utxoLovelace - expectedLovelace 
           : expectedLovelace - utxoLovelace;
         return diff <= tolerance;
@@ -62,21 +71,26 @@ export const prepareAdaRelease = async (
       
       if (matchingUtxo) {
         escrowUtxo = matchingUtxo;
-        // UTXO filtré par montant attendu
       } else if (escrowUtxos.length > 1) {
         console.warn('Aucun UTXO ne correspond au montant attendu. Utilisation du premier UTXO.');
       }
     }
     
-    // Obtenir l'adresse de l'acheteur (nécessaire pour signer la transaction de libération)
+    // Adresse de l'acheteur (nécessaire pour signer la transaction de libération)
     const buyerAddress = await lucid.wallet.address();
-    
+    if (!buyerAddress) {
+      return {
+        success: false,
+        message: "Impossible d'obtenir l'adresse du wallet connecté (acheteur).",
+      };
+    }
 
-    const txHash = await releaseFundsFromEscrow(escrowUtxo, sellerAddress, buyerAddress, lucid);
+    // Libérer les fonds via le script V2 minimal
+    const txHash = await releaseFundsFromEscrowV2(escrowUtxo, sellerAddress, buyerAddress, lucid);
 
-    // Obtenir l'URL de l'explorateur
     const network = lucid.network === 'Preprod' ? 'testnet' : 'mainnet';
-    const explorerUrl = network === 'testnet' 
+    const explorerUrl =
+      network === 'testnet'
       ? `https://preprod.cardanoscan.io/transaction/${txHash}`
       : `https://cardanoscan.io/transaction/${txHash}`;
 
@@ -84,23 +98,27 @@ export const prepareAdaRelease = async (
       success: true,
       txHash,
       message: 'Fonds libérés avec succès',
-      explorerUrl
+      explorerUrl,
     };
-
   } catch (error: any) {
-    console.error('❌ Erreur lors de la libération des fonds:', error);
+    const errorMessage = error?.message || String(error);
+    console.error('❌ Erreur lors de la libération des fonds avec Lucid:', error);
     
     // Gérer spécifiquement les erreurs de signature
-    if (error.message?.includes('declined') || error.message?.includes('user declined') || error.message?.includes('rejected')) {
+    if (
+      errorMessage.includes('declined') ||
+      errorMessage.includes('user declined') ||
+      errorMessage.includes('rejected')
+    ) {
       return {
         success: false,
-        message: 'Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet.'
+        message: 'Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet.',
       };
     }
 
     return {
       success: false,
-      message: error.message || 'Erreur lors de la libération des fonds'
+      message: errorMessage || 'Erreur lors de la libération des fonds',
     };
   }
 };

@@ -1,9 +1,9 @@
 //! Smart Contract Escrow pour WENZE
 //! 
-//! Ce contrat permet de :
-//! 1. Verrouiller les fonds d'une transaction
-//! 2. Libérer les fonds au vendeur après confirmation de l'acheteur
-//! 3. Récupérer les fonds si le délai expire (timeout)
+//! Ce contrat implémente la logique d'escrow complète selon le workflow :
+//! - Vérifie la signature du buyer pour Release
+//! - Vérifie le deadline pour Refund
+//! - Utilise un datum structuré avec toutes les informations nécessaires
 
 use cardano/transaction.{Transaction, OutputReference}
 use aiken/crypto.{VerificationKeyHash}
@@ -20,9 +20,11 @@ pub type EscrowDatum {
 
 pub type EscrowRedeemer {
   Release // Libère les fonds au vendeur (signé par l'acheteur)
-  Cancel  // Annule et récupère les fonds (si délai expiré)
+  Refund  // Rembourse l'acheteur (si délai expiré)
 }
 
+// Validator pour l'escrow
+// Syntaxe Aiken v1.1.21 : utiliser "validator" avec "spend" directement
 validator escrow {
   spend(datum: Option<EscrowDatum>, redeemer: EscrowRedeemer, _utxo: OutputReference, ctx: Transaction) {
     when datum is {
@@ -33,7 +35,7 @@ validator escrow {
             // Le buyer doit être dans la liste des signataires supplémentaires
             list.has(ctx.extra_signatories, escrow_datum.buyer)
           }
-          Cancel -> {
+          Refund -> {
             // Vérifier que le délai est expiré
             // Le validity_range doit commencer entièrement après le deadline
             ctx.validity_range |> interval.is_entirely_after(escrow_datum.deadline)

@@ -117,16 +117,49 @@ const OrderDetail = () => {
               // Calculer le montant attendu (final_price ou proposed_price ou amount_ada)
               const expectedAmountAda = order?.final_price || order?.proposed_price || order?.amount_ada;
               
+            // Récupérer le wallet MeshSDK (BrowserWallet) pour l'escrow Mesh
+            let walletApi: any = null;
+            if (walletConnected && wallet) {
+              try {
+                const walletId = wallet.walletId || 'nami';
+                const { BrowserWallet } = await import('@meshsdk/core');
+                const installedWallets = await BrowserWallet.getInstalledWallets();
+                const target = installedWallets.find((w: any) => w.name.toLowerCase() === walletId.toLowerCase());
+                if (target) {
+                  walletApi = await BrowserWallet.enable(target.name);
+                } else {
+                  console.warn('⚠️ Wallet Mesh introuvable pour id:', walletId, ' - tentative avec Nami par défaut');
+                  walletApi = await BrowserWallet.enable('nami');
+                }
+              } catch (walletError) {
+                console.warn('⚠️ Impossible de récupérer le wallet MeshSDK (BrowserWallet):', walletError);
+              }
+            }
+              
               // Libérer les fonds de l'escrow
+              // Passer le wallet et le hash de transaction escrow pour le fallback MeshSDK
               const releaseResult: ReleaseResult = await prepareAdaRelease(
                 id!, 
                 sellerAddress, 
                 lucid,
-                expectedAmountAda
+                expectedAmountAda,
+                walletApi, // Wallet API pour MeshSDK fallback
+                order?.escrow_hash // Hash de transaction escrow pour MeshSDK
               );
               
               if (!releaseResult.success) {
+                // Message spécifique pour les anciens escrows (Aiken/Lucid) non compatibles Mesh
+                if (
+                  releaseResult.message?.includes('ancien contrat') ||
+                  releaseResult.message?.includes('Aiken/Lucid')
+                ) {
+                  toast.info(
+                    'Ancien escrow non compatible',
+                    releaseResult.message
+                  );
+                } else {
                 toast.error('Erreur de libération', releaseResult.message);
+                }
                 // Annuler la mise à jour du statut si la libération a échoué
                 fetchOrder();
                 return;
@@ -329,8 +362,27 @@ const OrderDetail = () => {
     try {
       const priceToPay = order.final_price || order.proposed_price || order.amount_ada;
       
-      // Préparer le paiement avec l'adresse du vendeur et Lucid
-      const paymentPrep = await prepareAdaPayment(id!, priceToPay, sellerAddress || undefined, lucid || undefined);
+      // Récupérer le wallet API pour MeshSDK
+      let walletApi: any = null;
+      if (walletConnected && wallet) {
+        try {
+          const walletId = wallet.walletId || 'nami';
+          if (window.cardano && window.cardano[walletId]) {
+            walletApi = await window.cardano[walletId].enable();
+          }
+        } catch (walletError) {
+          console.warn('⚠️ Impossible de récupérer le wallet API pour MeshSDK:', walletError);
+        }
+      }
+      
+      // Préparer le paiement avec l'adresse du vendeur, Lucid et wallet pour MeshSDK
+      const paymentPrep = await prepareAdaPayment(
+        id!, 
+        priceToPay, 
+        sellerAddress || undefined, 
+        lucid || undefined,
+        walletApi // Wallet API pour MeshSDK
+      );
 
       // Mettre à jour la commande : escrow ouvert
       const { error: updateError } = await supabase
