@@ -57,55 +57,61 @@ const SellerProfile = () => {
   }, [id]);
 
   const fetchSellerData = async () => {
+    if (!id) return;
+    
     try {
-      // Fetch seller profile
-      const { data: sellerData, error: sellerError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // Exécuter toutes les requêtes en parallèle pour réduire la latence
+      const [
+        sellerResult,
+        productsResult,
+        totalProductsResult,
+        totalSalesResult,
+        ratingsResult,
+        wzpTotal
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
+          .single(),
+        supabase
+          .from('products')
+          .select('*')
+          .eq('seller_id', id)
+          .eq('status', 'available')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', id),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', id)
+          .eq('status', 'completed'),
+        supabase
+          .from('ratings')
+          .select('stars')
+          .eq('rated_id', id),
+        getWZPTotal(id)
+      ]);
 
-      if (sellerError) throw sellerError;
-      setSeller(sellerData);
+      if (sellerResult.error) throw sellerResult.error;
+      setSeller(sellerResult.data);
 
-      // Fetch seller's products
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('seller_id', id)
-        .eq('status', 'available')
-        .order('created_at', { ascending: false });
-
-      if (productsError) throw productsError;
-      setProducts(productsData || []);
-
-      // Fetch stats
-      const { count: totalProducts } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('seller_id', id);
-
-      const { count: totalSales } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('seller_id', id)
-        .eq('status', 'completed');
+      if (productsResult.error) throw productsResult.error;
+      setProducts(productsResult.data || []);
 
       // Calculer la note moyenne réelle basée sur les vraies notes
-      const { data: ratingsData } = await supabase
-        .from('ratings')
-        .select('stars')
-        .eq('rated_id', id);
-      
       let averageRating = 0;
-      if (ratingsData && ratingsData.length > 0) {
-        const sum = ratingsData.reduce((acc, r) => acc + r.stars, 0);
-        averageRating = sum / ratingsData.length;
+      if (ratingsResult.data && ratingsResult.data.length > 0) {
+        const sum = ratingsResult.data.reduce((acc, r) => acc + r.stars, 0);
+        averageRating = sum / ratingsResult.data.length;
       }
 
       setStats({
-        totalProducts: totalProducts || 0,
-        totalSales: totalSales || 0,
+        totalProducts: totalProductsResult.count || 0,
+        totalSales: totalSalesResult.count || 0,
         rating: averageRating || 0,
       });
 

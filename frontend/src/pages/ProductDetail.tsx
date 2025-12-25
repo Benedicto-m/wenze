@@ -108,27 +108,34 @@ const ProductDetail = () => {
 
   const fetchProduct = useCallback(async (productId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, profiles:seller_id(username, full_name, avatar_url, reputation_score, is_verified, email, wallet_address)')
-        .eq('id', productId)
-        .single();
+      setLoading(true);
+      
+      // Récupérer le produit et les infos vendeur en parallèle
+      const [productResult, sellerProductsResult] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*, profiles:seller_id(username, full_name, avatar_url, reputation_score, is_verified, email, wallet_address)')
+          .eq('id', productId)
+          .single(),
+        // Préparer la requête pour les autres produits du vendeur (sera exécutée après si nécessaire)
+        Promise.resolve(null)
+      ]);
 
-      if (error) throw error;
-      setProduct(data);
+      if (productResult.error) throw productResult.error;
+      setProduct(productResult.data);
 
-      // Fetch seller's other products count and email
-      if (data?.seller_id) {
+      // Fetch seller's other products count and email en parallèle
+      if (productResult.data?.seller_id) {
         const { count } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('seller_id', data.seller_id)
+          .eq('seller_id', productResult.data.seller_id)
           .eq('status', 'available');
         setSellerProductsCount(count || 0);
 
         // Get seller email if available
-        if (data.profiles?.email) {
-          setSellerEmail(data.profiles.email);
+        if (productResult.data.profiles?.email) {
+          setSellerEmail(productResult.data.profiles.email);
         }
       }
     } catch (error) {

@@ -309,9 +309,14 @@ export const releaseFundsFromEscrowV2 = async (
 
   // Récupérer le buyer VKeyHash depuis le datum pour la vérification de signature
   // Le script Aiken vérifie que le buyer est dans extra_signatories
+  // IMPORTANT: Ne pas décoder le datum ici car cela pourrait causer des problèmes de sérialisation
+  // On va décoder seulement pour récupérer le buyerVKeyHash, mais on garde le datum original intact
   let buyerVKeyHash: string | undefined;
-  if (escrowUtxo.datum) {
+  let originalDatum: string | undefined = escrowUtxo.datum as string | undefined;
+  
+  if (escrowUtxo.datum && typeof escrowUtxo.datum === 'string') {
     try {
+      // Décoder temporairement pour récupérer le buyerVKeyHash
       const decodedDatum = Data.from(escrowUtxo.datum) as Constr<any>;
       if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 2) {
         const buyerVKeyHashField = decodedDatum.fields[1];
@@ -370,46 +375,62 @@ export const releaseFundsFromEscrowV2 = async (
   try {
     console.log('🔧 Construction de la transaction de libération...');
     console.log('🔧 Script validator utilisé:', validator.type, validator.script.substring(0, 20) + '...');
+    console.log('🔧 Datum UTXO type:', typeof escrowUtxo.datum);
+    console.log('🔧 Datum UTXO preview:', escrowUtxo.datum ? (typeof escrowUtxo.datum === 'string' ? escrowUtxo.datum.substring(0, 50) + '...' : 'non-string') : 'null');
     
-    // IMPORTANT: Vérifier le format du datum et le fournir explicitement si nécessaire
-    let datumForTx: string | undefined = undefined;
-    if (escrowUtxo.datum) {
-      // Si le datum est déjà une chaîne hex, l'utiliser directement
-      if (typeof escrowUtxo.datum === 'string') {
+    // IMPORTANT: Le datum doit être correctement formaté pour collectFrom
+    // Le datum dans l'UTXO est en format CBOR hex (string) quand récupéré via utxosAt
+    // Lucid collectFrom peut avoir besoin que le datum soit re-sérialisé correctement
+    // On va décoder le datum, puis le re-sérialiser pour s'assurer qu'il est dans le bon format
+    let datumForTx: string;
+    
+    if (escrowUtxo.datum && typeof escrowUtxo.datum === 'string') {
+      try {
+        // Décoder le datum CBOR hex en PlutusData
+        const decodedDatum = Data.from(escrowUtxo.datum) as Constr<any>;
+        
+        // Re-sérialiser le datum pour s'assurer qu'il est dans le bon format
+        // Cela garantit que le datum est correctement formaté pour Lucid
+        datumForTx = Data.to(decodedDatum);
+        
+        console.log('🔧 Datum décodé et re-sérialisé avec succès');
+        console.log('🔧 Datum original length:', escrowUtxo.datum.length);
+        console.log('🔧 Datum re-sérialisé length:', datumForTx.length);
+      } catch (datumError: any) {
+        console.error('❌ Erreur lors du décodage/re-sérialisation du datum:', datumError);
+        // Si le décodage échoue, utiliser le datum original
         datumForTx = escrowUtxo.datum;
-        console.log('🔧 Datum trouvé (string):', datumForTx.substring(0, 50) + '...');
-      } else {
-        // Sinon, essayer de le convertir
-        try {
-          datumForTx = Data.to(escrowUtxo.datum);
-          console.log('🔧 Datum converti:', datumForTx.substring(0, 50) + '...');
-        } catch (e) {
-          console.warn('⚠️ Impossible de convertir le datum:', e);
-        }
       }
+    } else {
+      throw new Error('Le datum de l\'UTXO est invalide ou manquant');
     }
     
-    // Construire la transaction avec le datum explicitement fourni si disponible
-    // Lucid peut avoir besoin du datum pour sérialiser correctement la transaction
-    let tx = lucid.newTx();
+    // Créer l'UTXO avec le datum re-sérialisé
+    const utxoForTx: UTxO = {
+      txHash: escrowUtxo.txHash,
+      outputIndex: escrowUtxo.outputIndex,
+      address: escrowUtxo.address,
+      assets: escrowUtxo.assets,
+      datum: datumForTx, // Utiliser le datum re-sérialisé
+      datumHash: escrowUtxo.datumHash,
+      scriptRef: escrowUtxo.scriptRef,
+    };
     
-    // Si le datum est disponible, l'utiliser explicitement
-    if (datumForTx) {
-      // Utiliser readFrom pour lire l'UTXO avec son datum
-      tx = tx.readFrom([escrowUtxo]);
-    }
+    console.log('🔧 UTXO pour transaction - datum type:', typeof utxoForTx.datum);
+    console.log('🔧 UTXO pour transaction - datum est string:', typeof utxoForTx.datum === 'string');
     
-    tx = tx
-      .collectFrom([escrowUtxo], redeemer)
+    // Construire la transaction directement avec collectFrom
+    // Le datum re-sérialisé devrait être dans le bon format pour Lucid
+    const tx = lucid
+      .newTx()
+      .collectFrom([utxoForTx], redeemer)
       .attachSpendingValidator(validator)
       .payToAddress(sellerAddress, escrowUtxo.assets);
     
     // Ajouter le buyer comme signataire supplémentaire pour que le script vérifie sa signature
     // Le script Aiken vérifie: list.has(ctx.extra_signatories, escrow_datum.buyer)
     if (buyerVKeyHash) {
-      // Convertir le VKeyHash en clé publique pour l'ajouter comme signataire
-      // Note: Lucid gère automatiquement les signataires via .sign(), mais on peut aussi
-      // utiliser .addSignerKey() si nécessaire. Pour l'instant, on s'appuie sur .sign()
+      // Lucid gère automatiquement les signataires via .sign()
       console.log('✅ Buyer VKeyHash trouvé, la signature sera vérifiée par le script');
     }
     
@@ -425,6 +446,14 @@ export const releaseFundsFromEscrowV2 = async (
   } catch (error: any) {
     console.error('❌ Erreur lors de la construction de la transaction:', error);
     console.error('❌ Message:', error?.message);
+    console.error('❌ Stack:', error?.stack);
+    
+    // Logs supplémentaires pour déboguer
+    if (escrowUtxo.datum) {
+      console.error('❌ Datum type:', typeof escrowUtxo.datum);
+      console.error('❌ Datum length:', typeof escrowUtxo.datum === 'string' ? escrowUtxo.datum.length : 'N/A');
+      console.error('❌ Datum preview:', typeof escrowUtxo.datum === 'string' ? escrowUtxo.datum.substring(0, 100) : escrowUtxo.datum);
+    }
     
     throw error;
   }

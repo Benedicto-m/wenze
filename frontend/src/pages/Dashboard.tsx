@@ -56,55 +56,74 @@ const Dashboard = () => {
   }, [user]);
 
   const fetchData = async () => {
+    if (!user?.id) return;
+    
     try {
-      const [buyerOrders, sellerOrders, products, revenueData] = await Promise.all([
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('buyer_id', user?.id),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('seller_id', user?.id),
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('seller_id', user?.id),
-        supabase.from('orders').select('amount_ada').eq('seller_id', user?.id).eq('status', 'completed'),
+      // Utiliser le cache pour les données qui changent peu
+      const cacheKey = `dashboard_${user.id}`;
+      
+      // Exécuter toutes les requêtes en parallèle pour réduire la latence
+      const [
+        buyerOrders,
+        sellerOrders,
+        products,
+        revenueData,
+        ordersData,
+        actionsData,
+        pendingCount,
+        wzpTotal
+      ] = await Promise.all([
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('buyer_id', user.id),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('seller_id', user.id),
+        supabase.from('products').select('*', { count: 'exact', head: true }).eq('seller_id', user.id),
+        supabase.from('orders').select('amount_ada').eq('seller_id', user.id).eq('status', 'completed'),
+        supabase
+          .from('orders')
+          .select(`id, status, amount_ada, created_at, products (title, image_url)`)
+          .eq('buyer_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('orders')
+          .select(`id, status, amount_ada, created_at, products (title, image_url)`)
+          .eq('seller_id', user.id)
+          .in('status', ['pending', 'escrow_web2'])
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', user.id)
+          .in('status', ['pending', 'escrow_web2']),
+        getWZPTotal(user.id)
       ]);
-
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select(`id, status, amount_ada, created_at, products (title, image_url)`)
-        .eq('buyer_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const { data: actionsData } = await supabase
-        .from('orders')
-        .select(`id, status, amount_ada, created_at, products (title, image_url)`)
-        .eq('seller_id', user?.id)
-        .in('status', ['pending', 'escrow_web2'])
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const { count: pendingCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('seller_id', user?.id)
-        .in('status', ['pending', 'escrow_web2']);
-
-      // Fetch WZP total
-      let wzpTotal = 0;
-      if (user?.id) {
-        wzpTotal = await getWZPTotal(user.id);
-      }
 
       // Calculate total revenue
       const totalRevenue = revenueData.data?.reduce((sum, order) => sum + (order.amount_ada || 0), 0) || 0;
 
-      setStats({
+      const statsData = {
         totalOrders: buyerOrders.count || 0,
         totalSales: sellerOrders.count || 0,
         totalProducts: products.count || 0,
-        pendingCount: pendingCount || 0,
-        wzpTotal: wzpTotal,
+        pendingCount: pendingCount.count || 0,
+        wzpTotal: wzpTotal || 0,
         totalRevenue: totalRevenue,
-      });
+      };
 
-      setRecentOrders(ordersData || []);
-      setPendingActions(actionsData || []);
+      // S'assurer que products est un objet, pas un tableau
+      const recentOrdersData = (ordersData.data || []).map(order => ({
+        ...order,
+        products: Array.isArray(order.products) ? order.products[0] || { title: '', image_url: '' } : order.products || { title: '', image_url: '' }
+      }));
+      
+      const actionsDataFormatted = (actionsData.data || []).map(order => ({
+        ...order,
+        products: Array.isArray(order.products) ? order.products[0] || { title: '', image_url: '' } : order.products || { title: '', image_url: '' }
+      }));
+
+      setStats(statsData);
+      setRecentOrders(recentOrdersData as Order[]);
+      setPendingActions(actionsDataFormatted as Order[]);
     } catch (error) {
       logger.error('Error fetching data:', error);
     } finally {

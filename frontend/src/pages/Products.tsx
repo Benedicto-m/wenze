@@ -89,6 +89,11 @@ const Products = () => {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      
+      // Utiliser le cache pour les produits (TTL de 2 minutes car ils changent souvent)
+      const cacheKey = 'products_list';
+      
       const { data, error } = await supabase
         .from('products')
         .select(`

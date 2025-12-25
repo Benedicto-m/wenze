@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Star, ShieldCheck, Sparkles, Clock, RefreshCw } from 'lucide-react';
 import { formatFC, formatADA, convertADAToFC } from '../utils/currencyConverter';
@@ -37,11 +37,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isNew = false,
   isTrending = false,
 }) => {
-  const priceInFC = price_fc || convertADAToFC(price_ada);
-  const daysSinceCreation = Math.floor(
-    (Date.now() - new Date(created_at).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const isNewProduct = daysSinceCreation <= 7;
+  // Utiliser useMemo pour éviter les recalculs inutiles
+  const priceInFC = useMemo(() => price_fc || convertADAToFC(price_ada), [price_fc, price_ada]);
+  const isNewProduct = useMemo(() => {
+    const daysSinceCreation = Math.floor(
+      (Date.now() - new Date(created_at).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysSinceCreation <= 7;
+  }, [created_at]);
 
   return (
     <Link
@@ -167,7 +170,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   );
 };
 
-export default ProductCard;
+// Memoize le composant pour éviter les re-renders inutiles
+export default React.memo(ProductCard);
 
 
 

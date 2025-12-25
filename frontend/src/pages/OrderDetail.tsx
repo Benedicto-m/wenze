@@ -65,15 +65,15 @@ const OrderDetail = () => {
       // Vérifier si l'utilisateur a déjà noté cette commande
       if (data && user && data.status === 'completed') {
         const ratedPersonId = user.id === data.buyer_id ? data.seller_id : data.buyer_id;
-        const { data: existingRating } = await supabase
+        const { data: existingRating, error: ratingError } = await supabase
           .from('ratings')
           .select('*')
           .eq('order_id', id)
           .eq('rater_id', user.id)
           .eq('rated_id', ratedPersonId)
-          .single();
+          .maybeSingle(); // Utiliser maybeSingle() au lieu de single() pour éviter l'erreur 406
         
-        if (existingRating) {
+        if (existingRating && !ratingError) {
           setHasRated(true);
           setRatingStars(existingRating.stars);
           setRatingComment(existingRating.comment || '');
