@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { MessageSquare, Send, User, Check, CheckCheck, Clock, Info, AlertCircle, DollarSign, RotateCcw, Lightbulb } from 'lucide-react';
+import { MessageSquare, Send, User, Check, CheckCheck, Clock, Info, AlertCircle, DollarSign, RotateCcw } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -337,11 +337,10 @@ const ChatBox = ({ orderId, order, onProposeNewPrice }: { orderId: string; order
           
           {/* Indicateur de frappe (peut être ajouté plus tard) */}
           {newMessage.trim() && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 px-3 flex items-center gap-1.5">
-              <Lightbulb className="w-3.5 h-3.5 flex-shrink-0" />
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 px-3">
               {language === 'fr' 
-                ? 'Astuce: Appuyez sur Entrée pour envoyer rapidement' 
-                : 'Kidokezo: Bofya Enter ili kutuma haraka'}
+                ? '💡 Astuce: Appuyez sur Entrée pour envoyer rapidement' 
+                : '💡 Kidokezo: Bofya Enter ili kutuma haraka'}
             </p>
           )}
         </form>
