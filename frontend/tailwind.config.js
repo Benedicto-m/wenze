@@ -27,8 +27,8 @@ export default {
       // 👆 FIN DE L'OBJET 'colors'
 
       fontFamily: {
-        'sans': ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        'display': ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        'display': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
