@@ -867,8 +867,8 @@ const CardanoChatBot: React.FC = () => {
   };
 
   // Fonction améliorée pour rechercher dans la base de connaissances avec analyse sémantique
-  const searchKnowledgeBase = (question: string): string | null => {
-    const kb = cardanoKnowledgeBase[language] || [];
+  const searchKnowledgeBase = (question: string, currentLanguage: string): string | null => {
+    const kb = cardanoKnowledgeBase[currentLanguage] || [];
     const { intent, concepts } = extractIntent(question);
     
     // Normaliser la question
@@ -1181,7 +1181,7 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
   };
 
   // Générer une réponse intelligente qui comprend le contexte
-  const generateResponse = async (question: string): Promise<string> => {
+  const generateResponse = async (question: string, currentLanguage: string): Promise<string> => {
     // 1. PRIORITÉ: Essayer OpenAI d'abord (si disponible) - meilleure compréhension des questions
     try {
       const aiResponse = await callOpenAI(question, messages, language);
@@ -1193,7 +1193,7 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
     }
 
     // 2. Recherche intelligente dans la base de connaissances avec analyse sémantique
-    const kbAnswer = searchKnowledgeBase(question);
+    const kbAnswer = searchKnowledgeBase(question, language);
     if (kbAnswer && kbAnswer.trim().length > 20) {
       // Enrichir la réponse KB avec un contexte si c'est une vraie question
       const { intent, concepts } = extractIntent(question);
@@ -1249,13 +1249,13 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
       };
       
       const matchedConcept = concepts[0];
-      if (conceptResponses[language]?.[matchedConcept]) {
-        return conceptResponses[language][matchedConcept];
+      if (conceptResponses[currentLanguage]?.[matchedConcept]) {
+        return conceptResponses[currentLanguage][matchedConcept];
       }
     }
 
     // 4. Réponse par défaut améliorée avec suggestions
-    return defaultResponses[language].unknown + (language === 'fr' 
+    return defaultResponses[currentLanguage].unknown + (currentLanguage === 'fr' 
       ? '\n\n💡 Essayez de reformuler votre question ou posez-moi quelque chose comme :\n• "Comment fonctionne Cardano ?"\n• "C\'est quoi le staking ?"\n• "Comment utiliser un wallet ?"\n• "Comment faire une transaction sur WENZE ?"'
       : '\n\n💡 Jaribu kuunda swali au niulize kitu kama:\n• "Cardano inafanyaje kazi?"\n• "Staking ni nini?"\n• "Jinsi ya kutumia mfuko?"\n• "Jinsi ya kufanya biashara kwenye WENZE?"');
   };
@@ -1276,7 +1276,7 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
     setIsLoading(true);
 
     // Générer la réponse avec contexte complet
-    const response = await generateResponse(userMessage.content);
+    const response = await generateResponse(userMessage.content, language);
     
     const assistantMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
