@@ -5,7 +5,7 @@
  */
 
 import { getLucid } from './lucidService';
-import { releaseFundsFromEscrowV2, getEscrowUtxos } from './escrowContract';
+import { releaseFundsFromEscrow, getEscrowUtxos } from './escrowContract';
 import { Lucid } from 'lucid-cardano';
 
 export interface ReleaseResult {
@@ -86,7 +86,7 @@ export const prepareAdaRelease = async (
     }
 
     // Libérer les fonds via le script V2 minimal
-    const txHash = await releaseFundsFromEscrowV2(escrowUtxo, sellerAddress, buyerAddress, lucid);
+    const txHash = await releaseFundsFromEscrow(escrowUtxo, sellerAddress, buyerAddress, lucid);
 
     const network = lucid.network === 'Preprod' ? 'testnet' : 'mainnet';
     const explorerUrl =
