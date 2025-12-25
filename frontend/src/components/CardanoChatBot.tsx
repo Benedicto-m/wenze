@@ -1001,7 +1001,7 @@ const CardanoChatBot: React.FC = () => {
   };
 
   // Fonction améliorée pour appeler l'API OpenAI avec historique de conversation
-  const callOpenAI = async (question: string, conversationHistory: ChatMessage[]): Promise<string> => {
+  const callOpenAI = async (question: string, conversationHistory: ChatMessage[], currentLanguage: string): Promise<string> => {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     if (!apiKey) {
@@ -1015,7 +1015,7 @@ const CardanoChatBot: React.FC = () => {
         content: msg.content
       }));
 
-      const systemPrompt = language === 'fr' 
+      const systemPrompt = currentLanguage === 'fr' 
         ? `Tu es un expert IA en blockchain Cardano travaillant pour WENZE, une marketplace sécurisée sur Cardano. 
 
 MISSION : Comprendre et répondre intelligemment à TOUTES les questions sur Cardano, avec un raisonnement approfondi comme ChatGPT.
@@ -1184,7 +1184,7 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
   const generateResponse = async (question: string): Promise<string> => {
     // 1. PRIORITÉ: Essayer OpenAI d'abord (si disponible) - meilleure compréhension des questions
     try {
-      const aiResponse = await callOpenAI(question, messages);
+      const aiResponse = await callOpenAI(question, messages, language);
       if (aiResponse && aiResponse.trim().length > 30) {
         return aiResponse.trim();
       }
