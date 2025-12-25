@@ -6,3 +6,4 @@ export const ReadableStream = globalThis.ReadableStream || class ReadableStream 
 export const WritableStream = globalThis.WritableStream || class WritableStream {};
 export const TransformStream = globalThis.TransformStream || class TransformStream {};
 
+

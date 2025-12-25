@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { MessageSquare, Send, User, Check, CheckCheck, Clock, Info, AlertCircle, DollarSign, RotateCcw } from 'lucide-react';
+import { MessageSquare, Send, User, Check, CheckCheck, Clock, Info, AlertCircle, DollarSign, RotateCcw, Lightbulb } from 'lucide-react';
 
 interface Message {
   id: string;

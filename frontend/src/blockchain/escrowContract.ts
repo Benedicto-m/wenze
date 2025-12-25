@@ -121,8 +121,13 @@ export const lockFundsInEscrow = async (
   // fromText retourne une chaîne hex représentant les bytes
   const orderIdHex = fromText(orderId);
   
-  // Les VerificationKeyHash sont déjà en hex, on peut les utiliser directement
-  // Mais Data.to() attend des chaînes pour les bytes, donc on les garde en hex
+  // Convertir les chaînes hex en bytes pour les VerificationKeyHash
+  // Lucid attend des bytes (Uint8Array) pour les VerificationKeyHash dans PlutusData
+  const buyerVKeyHashBytes = fromHex(buyerVKeyHash);
+  const sellerVKeyHashBytes = fromHex(sellerVKeyHash);
+  
+  // Convertir orderIdHex en bytes également
+  const orderIdBytes = fromHex(orderIdHex);
   
   // Convertir le deadline en secondes (Plutus utilise des secondes, pas des millisecondes)
   // Si le deadline est passé en millisecondes, le convertir
@@ -141,11 +146,11 @@ export const lockFundsInEscrow = async (
   
   // Créer le datum structuré selon l'interface EscrowDatum
   // Format PlutusData: Constr avec les champs dans l'ordre
-  // IMPORTANT: Pour les ByteArray dans PlutusData avec Lucid, utiliser des chaînes hex
+  // IMPORTANT: Pour les ByteArray dans PlutusData avec Lucid, utiliser des bytes (Uint8Array)
   const escrowDatum = new Constr(0, [
-    orderIdHex, // order_id: ByteArray (comme hex string)
-    buyerVKeyHash, // buyer: VerificationKeyHash (comme hex string)
-    sellerVKeyHash, // seller: VerificationKeyHash (comme hex string)
+    orderIdBytes, // order_id: ByteArray (comme bytes)
+    buyerVKeyHashBytes, // buyer: VerificationKeyHash (comme bytes)
+    sellerVKeyHashBytes, // seller: VerificationKeyHash (comme bytes)
     BigInt(amountLovelace), // amount: Int (en lovelace)
     BigInt(deadlineSeconds), // deadline: Int (timestamp en secondes)
   ]);
@@ -313,7 +318,17 @@ export const releaseFundsFromEscrowV2 = async (
     try {
       const decodedDatum = Data.from(escrowUtxo.datum) as Constr;
       if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 2) {
-        buyerVKeyHash = decodedDatum.fields[1] as string;
+        const buyerVKeyHashField = decodedDatum.fields[1];
+        // Le datum peut contenir des bytes (Uint8Array) ou une chaîne hex
+        // Convertir en chaîne hex pour utilisation
+        if (buyerVKeyHashField instanceof Uint8Array) {
+          // Convertir les bytes en chaîne hex
+          buyerVKeyHash = Array.from(buyerVKeyHashField)
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+        } else {
+          buyerVKeyHash = buyerVKeyHashField as string;
+        }
         console.log('🔎 Buyer VKeyHash trouvé dans le datum:', buyerVKeyHash?.substring(0, 16) + '...');
       }
     } catch (e) {
@@ -565,10 +580,21 @@ export const getEscrowUtxos = async (
       try {
         const decodedDatum = Data.from(utxo.datum) as Constr;
         if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 1) {
-          const utxoOrderId = decodedDatum.fields[0] as string;
+          const utxoOrderId = decodedDatum.fields[0];
           // Convertir l'orderId en hex pour comparaison
           const orderIdHex = fromText(orderId);
-          return utxoOrderId === orderIdHex;
+          // Le datum peut contenir des bytes (Uint8Array) ou une chaîne hex
+          // Convertir en chaîne hex pour comparaison
+          let utxoOrderIdHex: string;
+          if (utxoOrderId instanceof Uint8Array) {
+            // Convertir les bytes en chaîne hex
+            utxoOrderIdHex = Array.from(utxoOrderId)
+              .map(b => b.toString(16).padStart(2, '0'))
+              .join('');
+          } else {
+            utxoOrderIdHex = utxoOrderId as string;
+          }
+          return utxoOrderIdHex === orderIdHex;
         }
       } catch (e) {
         console.warn('⚠️ Impossible de décoder le datum pour filtrer par orderId:', e);

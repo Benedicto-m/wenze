@@ -56,3 +56,4 @@ COMMENT ON COLUMN products.contact_whatsapp IS 'Numéro WhatsApp pour contact (r
 COMMENT ON COLUMN products.contact_email IS 'Adresse email pour contact (requis pour les services)';
 COMMENT ON COLUMN products.is_available IS 'Statut de disponibilité pour les services (true = disponible, false = indisponible)';
 
+
