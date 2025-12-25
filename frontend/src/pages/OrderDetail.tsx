@@ -9,7 +9,7 @@ import { useToast } from '../components/Toast';
 import { useBlockchain } from '../context/BlockchainContext';
 import { convertFCToADA, convertADAToFC, formatFC, formatADA } from '../utils/currencyConverter';
 import { distributeWZPAfterTransaction } from '../utils/distributeWZP';
-import { CheckCircle, X, DollarSign, ShoppingCart, AlertCircle, MessageSquare, TrendingDown, RotateCcw, Smartphone, Clock as ClockIcon, Clock, Info, ExternalLink, Lightbulb, ClipboardList, Hourglass } from 'lucide-react';
+import { CheckCircle, X, DollarSign, ShoppingCart, AlertCircle, MessageSquare, TrendingDown, RotateCcw, Smartphone, Clock as ClockIcon, Clock, Info, ExternalLink, Lightbulb, ClipboardList, Hourglass, Star } from 'lucide-react';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -23,6 +23,10 @@ const OrderDetail = () => {
   const [newNegotiatePriceFC, setNewNegotiatePriceFC] = useState<string>('');
   const [newNegotiating, setNewNegotiating] = useState(false);
   const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
+  const [ratingStars, setRatingStars] = useState<number>(0);
+  const [ratingComment, setRatingComment] = useState<string>('');
+  const [hasRated, setHasRated] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     if (id) fetchOrder();
@@ -57,6 +61,24 @@ const OrderDetail = () => {
 
     if (!error) {
       setOrder(data);
+      
+      // Vérifier si l'utilisateur a déjà noté cette commande
+      if (data && user && data.status === 'completed') {
+        const ratedPersonId = user.id === data.buyer_id ? data.seller_id : data.buyer_id;
+        const { data: existingRating } = await supabase
+          .from('ratings')
+          .select('*')
+          .eq('order_id', id)
+          .eq('rater_id', user.id)
+          .eq('rated_id', ratedPersonId)
+          .single();
+        
+        if (existingRating) {
+          setHasRated(true);
+          setRatingStars(existingRating.stars);
+          setRatingComment(existingRating.comment || '');
+        }
+      }
     } else {
       console.error('Error fetching order:', error);
     }
@@ -328,6 +350,37 @@ const OrderDetail = () => {
       toast.error('Erreur', 'Impossible de refuser la proposition.');
     } finally {
       setProcessing(false);
+    }
+  };
+  
+  // Soumettre la note
+  const handleSubmitRating = async () => {
+    if (!order || !user || ratingStars === 0) return;
+    
+    setSubmittingRating(true);
+    try {
+      const isBuyerCheck = user.id === order.buyer_id;
+      const ratedPersonId = isBuyerCheck ? order.seller_id : order.buyer_id;
+      
+      const { error } = await supabase
+        .from('ratings')
+        .insert([{
+          order_id: id!,
+          rater_id: user.id,
+          rated_id: ratedPersonId,
+          stars: ratingStars,
+          comment: ratingComment.trim() || null
+        }]);
+      
+      if (error) throw error;
+      
+      setHasRated(true);
+      toast.success('Note enregistrée', 'Merci d\'avoir partagé votre expérience !');
+    } catch (error: any) {
+      console.error('Error submitting rating:', error);
+      toast.error('Erreur', 'Impossible d\'enregistrer la note. Veuillez réessayer.');
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -1001,14 +1054,97 @@ const OrderDetail = () => {
 
                 {/* Commande terminée */}
                 {order.status === 'completed' && (
-                    <div className="text-center p-5 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
-                        <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                        <p className="font-semibold text-green-900 dark:text-green-100">
-                            Commande terminée
-                        </p>
-                        <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                            Les fonds ont été libérés.
-                        </p>
+                    <div className="space-y-4">
+                        <div className="text-center p-5 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+                            <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                            <p className="font-semibold text-green-900 dark:text-green-100">
+                                Commande terminée
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                                Les fonds ont été libérés.
+                            </p>
+                        </div>
+                        
+                        {/* Système de notation */}
+                        {user && !hasRated && (
+                            <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 p-5 rounded-xl border-2 border-violet-200 dark:border-violet-800">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+                                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                                        {isBuyer ? 'Noter le vendeur' : 'Noter l\'acheteur'}
+                                    </h3>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                    Partagez votre expérience pour aider la communauté
+                                </p>
+                                
+                                {/* Étoiles */}
+                                <div className="flex items-center gap-2 mb-4">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setRatingStars(star)}
+                                            className="focus:outline-none transition-transform hover:scale-110"
+                                        >
+                                            <Star
+                                                className={`w-8 h-8 ${
+                                                    star <= ratingStars
+                                                        ? 'text-yellow-500 fill-yellow-500'
+                                                        : 'text-gray-300 dark:text-gray-600'
+                                                }`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {/* Commentaire */}
+                                <textarea
+                                    value={ratingComment}
+                                    onChange={(e) => setRatingComment(e.target.value)}
+                                    placeholder="Ajoutez un commentaire (optionnel)..."
+                                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+                                    rows={3}
+                                />
+                                
+                                {/* Bouton soumettre */}
+                                <button
+                                    onClick={handleSubmitRating}
+                                    disabled={ratingStars === 0 || submittingRating}
+                                    className="w-full bg-violet-600 text-white py-2.5 rounded-lg hover:bg-violet-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {submittingRating ? 'Envoi...' : 'Envoyer la note'}
+                                </button>
+                            </div>
+                        )}
+                        
+                        {/* Note déjà donnée */}
+                        {hasRated && (
+                            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                className={`w-5 h-5 ${
+                                                    star <= ratingStars
+                                                        ? 'text-yellow-500 fill-yellow-500'
+                                                        : 'text-gray-300 dark:text-gray-600'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        Vous avez noté cette transaction
+                                    </span>
+                                </div>
+                                {ratingComment && (
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 italic">
+                                        "{ratingComment}"
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
                 

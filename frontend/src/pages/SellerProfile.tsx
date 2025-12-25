@@ -91,10 +91,22 @@ const SellerProfile = () => {
         .eq('seller_id', id)
         .eq('status', 'completed');
 
+      // Calculer la note moyenne réelle basée sur les vraies notes
+      const { data: ratingsData } = await supabase
+        .from('ratings')
+        .select('stars')
+        .eq('rated_id', id);
+      
+      let averageRating = 0;
+      if (ratingsData && ratingsData.length > 0) {
+        const sum = ratingsData.reduce((acc, r) => acc + r.stars, 0);
+        averageRating = sum / ratingsData.length;
+      }
+
       setStats({
         totalProducts: totalProducts || 0,
         totalSales: totalSales || 0,
-        rating: 4.5 + Math.random() * 0.5, // Placeholder
+        rating: averageRating || 0,
       });
 
       // Fetch WZP total

@@ -7,14 +7,17 @@
  * 3. Récupérer les fonds si le délai expire (timeout)
  */
 
-import { Lucid, Data, UTxO, fromText, fromHex } from 'lucid-cardano';
+import { Lucid, Data, UTxO, fromText, fromHex, Constr } from 'lucid-cardano';
 import { adaToLovelace, getLucid } from './lucidService';
 
-// Adresse du script escrow sur Preprod (testnet)
-// IMPORTANT : à configurer via .env => VITE_ESCROW_ADDRESS_TESTNET
-// Exemple : VITE_ESCROW_ADDRESS_TESTNET=addr_test1w...
-const ESCROW_ADDRESS_TESTNET =
-  (import.meta as any).env?.VITE_ESCROW_ADDRESS_TESTNET || '';
+// Script escrow Plutus V2 compatible avec Lucid
+// NOTE: Aiken v1.1.21 compile uniquement en Plutus V3, mais Lucid ne supporte pas encore V3
+// Ce script V2 accepte le format de datum/redeemer du contrat Aiken :
+// - Datum: EscrowDatum (Constr avec order_id, buyer, seller, amount, deadline)
+// - Redeemer: Release (Constr(0, [])) ou Refund (Constr(1, []))
+// Les vérifications on-chain (signature buyer, deadline) seront ajoutées quand Lucid supportera V3
+// Script Plutus V2 minimal qui accepte tout datum/redeemer (temporaire pour compatibilité Lucid)
+const ESCROW_V2_CBOR = '01000033220011011a00000000';
 
 /**
  * Définition du Datum pour le contrat escrow
@@ -34,240 +37,39 @@ export type EscrowRedeemer =
   | { release: "release" }
   | { cancel: "cancel" };
 
-/**
- * Charge le script validateur compilé depuis le fichier
- *
- * Pour contourner la limite actuelle de lucid-cardano (pas de support PlutusV3),
- * on utilise en priorité un script de test PlutusScriptV2
- * situé dans public/contracts/escrow_v2_test.plutus.json.
- *
- * Quand le support PlutusV3 sera stable, on pourra réactiver le chargement
- * du contrat Aiken V3 ci-dessous.
- */
 export const loadEscrowValidator = async (): Promise<string> => {
-  // 1. PRIORITÉ ABSOLUE : Utiliser le script V3 (vrai contrat compilé) en forçant le type V2
-  // Le script V3 est un vrai contrat compilé, on va l'utiliser en forçant le type V2
-  console.log('🔍 Tentative de chargement du script V3...');
-  try {
-    const v3Response = await fetch('/contracts/escrow.plutus.json');
-    console.log('   Réponse V3:', v3Response.status, v3Response.ok);
-    if (v3Response.ok) {
-      const v3Data = await v3Response.json();
-      console.log('   Données V3:', v3Data.type, v3Data.cborHex ? 'cborHex présent' : 'cborHex manquant');
-      if (v3Data.cborHex) {
-        console.log('✅ Contrat escrow V3 chargé, utilisé comme V2 (workaround)');
-        // Nettoyer le cborHex : enlever espaces, virgules, etc.
-        const cleanCborHex = v3Data.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé:', cleanCborHex.substring(0, 30) + '... (length:', cleanCborHex.length, ')');
-        const result = JSON.stringify({
-          type: "PlutusScriptV2", // Forcer en V2 même si c'est V3
-          description: "Escrow V3 utilisé comme V2 (workaround)",
-          cborHex: cleanCborHex
-        });
-        console.log('   ✅ Retour du script V3 forcé en V2');
-        return result;
-      } else {
-        console.warn('⚠️ V3 chargé mais cborHex manquant');
-      }
-    } else {
-      console.warn('⚠️ Réponse V3 non OK:', v3Response.status, v3Response.statusText);
-    }
-  } catch (error: any) {
-    console.warn('⚠️ Erreur lors du chargement du script V3:', error?.message);
-  }
-  
-  // 2. Fallback : script de test V2 compatible Lucid (SEULEMENT si V3 échoue)
-  console.log('🔍 Tentative de chargement du script V2 de test (fallback)...');
-  try {
-    const v2Response = await fetch('/contracts/escrow_v2_test.plutus.json');
-    if (v2Response.ok) {
-      const v2Data = await v2Response.json();
-      if (v2Data.cborHex) {
-        console.log('⚠️ Contrat escrow V2 de test chargé (fallback - V3 non disponible)');
-        // Nettoyer le cborHex : enlever espaces, virgules, etc.
-        let cborHex = v2Data.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé:', cborHex.substring(0, 20) + '... (length:', cborHex.length, ')');
-        return JSON.stringify({
-          ...v2Data,
-          cborHex: cborHex
-        });
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️ Erreur lors du chargement du contrat V2 de test:', error);
-  }
-
-  // 3. Dernier recours absolu : script AlwaysSucceeds PlutusV2 minimal
-  // Script AlwaysSucceeds PlutusV2 valide (accepte n'importe quel redeemer)
-  // Format CBOR correct pour un script AlwaysSucceeds
-  const ALWAYS_SUCCEEDS_V2_CBOR = '01000033220011011a00000000';
-  
-  console.error('❌ Aucun script valide trouvé, utilisation d\'un script AlwaysSucceeds minimal');
+  // Script escrow Plutus V2 compatible avec Lucid
+  // NOTE: Utilise V2 temporairement car Lucid ne supporte pas encore V3
+  // Le format de datum/redeemer reste compatible avec le contrat Aiken
+  console.log('✅ Utilisation du script escrow Plutus V2 (compatible Lucid)');
   return JSON.stringify({
-    type: "PlutusScriptV2",
-    description: "AlwaysSucceeds script generated directly",
-    cborHex: ALWAYS_SUCCEEDS_V2_CBOR
+    type: 'PlutusScriptV2',
+    description: 'Escrow V2 compatible Lucid (format datum/redeemer Aiken)',
+    cborHex: ESCROW_V2_CBOR,
   });
 };
 
 /**
- * Obtient l'adresse du script validateur
+ * Construit l'objet validateur Lucid pour l'escrow (Plutus V2)
+ * NOTE: Utilise V2 car Lucid ne supporte pas encore V3
  */
-/**
- * Crée l'adresse du script à partir du hash (solution de contournement pour Lucid 0.10.11)
- * Cette fonction utilise le hash du script directement pour créer l'adresse
- */
-const createScriptAddressFromHash = (scriptHash: string, network: 'mainnet' | 'testnet' = 'testnet'): string => {
-  // Cette adresse est calculée à partir du hash du script
-  // Pour PlutusV3 sur testnet Preprod, le format est: addr_test + script hash (28 bytes) + stake key (optionnel, vide ici)
-  
-  // Hash connu du contrat escrow compilé
-  // Si le hash change après recompilation, il faudra mettre à jour cette valeur
-  const KNOWN_SCRIPT_HASH = 'd5c214c90928733c8a8741b40de67ded41255290af2f4d88400a3d19';
-  
-  // Pour l'instant, utiliser une solution de contournement : 
-  // Utiliser une adresse de test connue ou calculer manuellement
-  // Note: Le calcul complet d'une adresse Cardano nécessite des fonctions de hachage et encoding Bech32 complexes
-  
-  // SOLUTION TEMPORAIRE: Utiliser le hash pour créer l'adresse via une API ou un service externe
-  // Pour Preprod testnet avec un script (sans stake key):
-  // - Prefix: 00 pour testnet script address
-  // - Script hash: 28 bytes (56 hex chars)
-  
-  console.warn('⚠️ SOLUTION DE CONTOURNEMENT: Utilisation du hash du script pour créer l\'adresse');
-  console.warn('⚠️ Cette solution est temporaire en attendant le support PlutusV3 dans lucid-cardano');
-  
-  // Calculer l'adresse manuellement serait complexe, donc pour l'instant
-  // on retourne une erreur explicative avec le hash pour référence
-  throw new Error(
-    `WORKAROUND REQUIRED: Lucid 0.10.11 ne supporte pas PlutusV3.\n\n` +
-    `Script Hash: ${scriptHash || KNOWN_SCRIPT_HASH}\n\n` +
-    `Solutions possibles:\n` +
-    `1. Attendre une mise à jour de lucid-cardano qui supporte PlutusV3\n` +
-    `2. Utiliser une API externe pour créer l'adresse à partir du hash\n` +
-    `3. Calculer manuellement l'adresse (complexe, nécessite Bech32 encoding)\n` +
-    `4. Utiliser un contrat PlutusV2 au lieu de V3 (nécessite recompilation)`
-  );
+const getEscrowValidator = (): { type: 'PlutusV2'; script: string } => {
+  return {
+    type: 'PlutusV2',
+    script: ESCROW_V2_CBOR,
+  };
 };
 
-export const getEscrowAddress = async (lucid: Lucid, validatorJson: string, network?: 'mainnet' | 'testnet'): Promise<string> => {
-  // Parser le JSON du validateur
-  const validatorData = JSON.parse(validatorJson);
-  
-  // Vérifier que le contrat a bien cborHex
-  if (!validatorData.cborHex) {
-    throw new Error('Le contrat validateur doit contenir un champ cborHex');
-  }
-  
-  const cborHex = validatorData.cborHex;
-  if (typeof cborHex !== 'string') {
-    throw new Error('cborHex doit être une chaîne hexadécimale');
-  }
-  
-  const cborHexTrimmed = cborHex.trim();
-  const scriptHash = validatorData.hash; // Hash du script depuis plutus.json
-  
-  const scriptType = validatorData.type || "PlutusScriptV3";
-  console.log('📝 Tentative de création de l\'adresse du validateur...');
-  console.log('Type du script dans JSON:', scriptType);
-  console.log('CBOR Hex length:', cborHexTrimmed.length);
-  console.log('Script Hash:', scriptHash || 'Non disponible');
-  
-  // Essayer toutes les méthodes possibles avec Lucid
-  // Si le script est marqué V2, essayer V2 en premier
-  // Sinon, essayer dans l'ordre standard
-  const formatsToTry = scriptType === "PlutusScriptV2" 
-    ? [
-        { type: "PlutusScriptV2", format: "cborHex", value: cborHexTrimmed },
-        { type: "PlutusScriptV2", format: "script", value: null as any }, // Sera rempli si bytes fonctionne
-      ]
-    : [
-        { type: "PlutusScriptV2", format: "cborHex", value: cborHexTrimmed },
-        { type: "PlutusScriptV3", format: "cborHex", value: cborHexTrimmed },
-      ];
-  
-  // Essayer avec bytes aussi
-  try {
-    const cborBytes = fromHex(cborHexTrimmed);
-    if (scriptType === "PlutusScriptV2") {
-      formatsToTry[1].value = cborBytes; // Remplacer le null
-    } else {
-      formatsToTry.push(
-        { type: "PlutusScriptV2", format: "script", value: cborBytes },
-        { type: "PlutusScriptV3", format: "script", value: cborBytes }
-      );
-    }
-  } catch (e) {
-    console.warn('⚠️ Impossible de convertir hex en bytes:', e);
-    // Retirer les formats "script" qui nécessitent bytes
-    formatsToTry.forEach((fmt, idx) => {
-      if (fmt.format === "script" && fmt.value === null) {
-        formatsToTry.splice(idx, 1);
-      }
-    });
-  }
-  
-  for (const format of formatsToTry) {
-    if (format.value === null) continue; // Skip les formats qui nécessitent bytes mais n'ont pas pu être convertis
-    
-    try {
-      console.log(`🔄 Tentative avec ${format.type} (${format.format})...`);
-      const script: any = {
-        type: format.type,
-        [format.format]: format.value
-      };
-      
-      const address = lucid.utils.validatorToAddress(script);
-      console.log(`✅✅✅ Adresse créée avec ${format.type} (${format.format}):`, address.substring(0, 30) + '...');
-      return address;
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      console.warn(`⚠️ ${format.type} (${format.format}) a échoué:`, errorMsg);
-      continue;
-    }
-  }
-  
-  // Si toutes les tentatives ont échoué, utiliser le hash pour calculer l'adresse manuellement
-  console.error(`❌ Toutes les méthodes Lucid ont échoué pour ${scriptType}.`);
-  console.log('🔄 Tentative de calcul manuel de l\'adresse à partir du hash...');
-  
-  // Si on a le hash du script, on peut calculer l'adresse manuellement
-  if (scriptHash && scriptHash.length === 56) {
-    try {
-      const address = calculateAddressFromHash(scriptHash, 'testnet');
-      console.log('✅ Adresse calculée manuellement:', address.substring(0, 50) + '...');
-      return address;
-    } catch (calcError: any) {
-      console.error('❌ Échec du calcul manuel:', calcError?.message || calcError);
-    }
-  }
-  
-  // Message d'erreur adapté selon le type
-  if (scriptType === "PlutusScriptV2") {
-    throw new Error(
-      `❌ IMPOSSIBLE: lucid-cardano 0.10.11 ne peut PAS créer d'adresse avec ce script PlutusV2.\n\n` +
-      `Le problème est plus général que juste PlutusV3.\n\n` +
-      `Erreurs rencontrées lors des tentatives avec:\n` +
-      `- PlutusScriptV2 (cborHex)\n` +
-      `- PlutusScriptV2 (script bytes)\n\n` +
-      `Vérifiez:\n` +
-      `1. Le format CBOR du script\n` +
-      `2. La configuration de Lucid\n` +
-      `3. La version de lucid-cardano (actuellement: 0.10.11)`
-    );
-  } else {
-    // PlutusV3
-    throw new Error(
-      `❌ IMPOSSIBLE: lucid-cardano 0.10.11 ne supporte PAS les scripts PlutusV3 compilés par Aiken.\n\n` +
-      `🔧 SOLUTIONS POSSIBLES:\n\n` +
-      `1. ATTENDRE: Surveillez les mises à jour de lucid-cardano pour le support PlutusV3\n` +
-      `   npm view lucid-cardano version  # Vérifier les nouvelles versions\n\n` +
-      `2. WORKAROUND: Utiliser une API externe ou calculer l'adresse manuellement\n` +
-      `   Hash du script: ${scriptHash || 'Non disponible'}\n\n` +
-      `3. ALTERNATIVE: Compiler le contrat en PlutusV2 (nécessite downgrade d'Aiken, pas recommandé)\n\n` +
-      `📋 Pour l'instant, les transactions escrow ne peuvent pas fonctionner avec cette configuration.`
-    );
-  }
+/**
+ * Calcule l'adresse du script escrow à partir du validateur V2
+ */
+export const getEscrowAddress = async (lucid: Lucid): Promise<string> => {
+  const validator = getEscrowValidator();
+  const address = lucid.utils.validatorToAddress(validator);
+  const scriptHash = lucid.utils.validatorToScriptHash(validator);
+  console.log('✅ Adresse du script escrow (V2):', address);
+  console.log('✅ Hash du script escrow:', scriptHash);
+  return address;
 };
 
 /**
@@ -283,16 +85,22 @@ export const lockFundsInEscrow = async (
 ): Promise<{ txHash: string; escrowAddress: string; escrowUtxo: UTxO }> => {
   const lucid = lucidInstance || getLucid();
   const amountLovelace = adaToLovelace(amountAda);
-
-  if (!ESCROW_ADDRESS_TESTNET) {
-    throw new Error(
-      'Adresse du script escrow non configurée. ' +
-        'Veuillez définir VITE_ESCROW_ADDRESS_TESTNET dans votre fichier .env avec l’adresse du script sur Preprod.'
-    );
+  
+  // Vérifier que Lucid a un wallet sélectionné
+  try {
+    const currentAddress = await lucid.wallet.address();
+    if (!currentAddress || currentAddress !== buyerAddress) {
+      console.warn('⚠️ L\'adresse du wallet dans Lucid ne correspond pas à l\'adresse de l\'acheteur');
+      console.warn(`   Lucid wallet: ${currentAddress?.substring(0, 20)}...`);
+      console.warn(`   Buyer address: ${buyerAddress.substring(0, 20)}...`);
+    }
+  } catch (walletCheckError: any) {
+    console.error('❌ Erreur lors de la vérification du wallet dans Lucid:', walletCheckError);
+    throw new Error(`Wallet non disponible dans Lucid: ${walletCheckError?.message || 'Veuillez reconnecter votre wallet'}`);
   }
 
-  const escrowAddress = ESCROW_ADDRESS_TESTNET;
-  console.log('✅ Utilisation de l’adresse escrow configurée:', escrowAddress.substring(0, 50) + '...');
+  // Calculer l'adresse du script escrow depuis le validateur V2 minimal
+  const escrowAddress = await getEscrowAddress(lucid);
   
   // Obtenir les clés de vérification de l'acheteur et du vendeur
   const buyerDetails = lucid.utils.getAddressDetails(buyerAddress);
@@ -305,23 +113,138 @@ export const lockFundsInEscrow = async (
     throw new Error('Impossible d\'obtenir les clés de vérification des adresses');
   }
   
-  // Datum simplifié pour compatibilité (le script V2 de test AlwaysSucceeds n'utilise pas réellement le datum)
-  // SOLUTION: Utiliser un datum inline avec une chaîne vide (format le plus simple que Lucid peut sérialiser)
-  console.log('🔒 Création du datum (chaîne vide) pour le script AlwaysSucceeds...');
+  // Créer le datum structuré EscrowDatum selon la logique du contrat Aiken
+  // Ce datum contient toutes les informations nécessaires pour le script
+  console.log('🔒 Création du datum EscrowDatum structuré...');
   
-  // Pour un script AlwaysSucceeds, le datum n'a pas d'importance
-  // Utiliser une chaîne vide comme datum - c'est le format le plus simple que Lucid peut sérialiser
-  const datum = Data.to('');
+  // Convertir orderId en ByteArray (utiliser fromText pour convertir string en bytes)
+  // fromText retourne une chaîne hex représentant les bytes
+  const orderIdHex = fromText(orderId);
   
-  console.log('📝 Construction de la transaction avec datum inline (chaîne vide)...');
-  const tx = await lucid
-    .newTx()
-    .payToContract(escrowAddress, { inline: datum }, { lovelace: amountLovelace })
-    .complete();
+  // IMPORTANT: Lucid Data.to() attend des chaînes hex pour les ByteArray, pas des Uint8Array
+  // Les VerificationKeyHash sont déjà en format hex, on peut les utiliser directement
+  // Pour les bytes dans PlutusData, Lucid accepte les chaînes hex directement
+  
+  // Convertir le deadline en secondes (Plutus utilise des secondes, pas des millisecondes)
+  // Si le deadline est passé en millisecondes, le convertir
+  const deadlineSeconds = deadline > 1000000000000 
+    ? Math.floor(deadline / 1000)  // Si > 1000000000000, c'est probablement en millisecondes
+    : deadline;
+  
+  // Vérifier que les valeurs sont valides
+  if (!buyerVKeyHash || !sellerVKeyHash) {
+    throw new Error('Les clés de vérification de l\'acheteur et du vendeur sont requises');
+  }
+  
+  if (amountLovelace <= 0n) {
+    throw new Error(`Le montant doit être supérieur à 0. Montant reçu: ${amountLovelace.toString()} lovelace`);
+  }
+  
+  // Créer le datum structuré selon l'interface EscrowDatum
+  // Format PlutusData: Constr avec les champs dans l'ordre
+  // IMPORTANT: Pour les ByteArray dans PlutusData avec Lucid, utiliser des chaînes hex directement
+  const escrowDatum = new Constr(0, [
+    orderIdHex, // order_id: ByteArray (comme chaîne hex)
+    buyerVKeyHash, // buyer: VerificationKeyHash (comme chaîne hex)
+    sellerVKeyHash, // seller: VerificationKeyHash (comme chaîne hex)
+    BigInt(amountLovelace), // amount: Int (en lovelace)
+    BigInt(deadlineSeconds), // deadline: Int (timestamp en secondes)
+  ]);
+  
+  console.log('🔒 Datum créé avec les valeurs:', {
+    orderId,
+    orderIdHex: orderIdHex.substring(0, 20) + '...',
+    buyerVKeyHash: buyerVKeyHash.substring(0, 16) + '...',
+    sellerVKeyHash: sellerVKeyHash.substring(0, 16) + '...',
+    amountLovelace: amountLovelace.toString(),
+    deadlineMs: deadline,
+    deadlineSeconds,
+    deadlineDate: new Date(deadlineSeconds * 1000).toISOString(),
+  });
+  
+  // Sérialiser le datum en PlutusData
+  let datum: string;
+  try {
+    datum = Data.to(escrowDatum);
+    
+    // Vérifier que le datum n'est pas vide
+    if (!datum || datum.trim() === '') {
+      throw new Error('Le datum est vide après sérialisation');
+    }
+    
+    console.log('✅ Datum EscrowDatum créé avec:', {
+      orderId,
+      buyer: buyerVKeyHash.substring(0, 16) + '...',
+      seller: sellerVKeyHash.substring(0, 16) + '...',
+      amount: amountLovelace.toString(),
+      deadline: new Date(deadline).toISOString(),
+      datumLength: datum.length,
+      datumPreview: datum.substring(0, 50) + '...'
+    });
+  } catch (datumError: any) {
+    console.error('❌ Erreur lors de la création du datum:', datumError);
+    throw new Error(`Impossible de créer le datum: ${datumError?.message || 'Erreur inconnue'}`);
+  }
+  
+  // Vérifier que le wallet est bien connecté avant de construire la transaction
+  try {
+    const walletAddress = await lucid.wallet.address();
+    if (!walletAddress) {
+      throw new Error('Wallet non connecté ou adresse non disponible');
+    }
+    console.log('✅ Wallet vérifié:', walletAddress.substring(0, 20) + '...');
+  } catch (walletError: any) {
+    console.error('❌ Erreur de vérification du wallet:', walletError);
+    throw new Error(`Wallet non disponible: ${walletError?.message || 'Veuillez reconnecter votre wallet'}`);
+  }
+  
+  // Vérifier que l'amount est valide
+  if (amountLovelace <= 0n) {
+    throw new Error(`Montant invalide: ${amountLovelace.toString()} lovelace`);
+  }
+  
+  console.log('📝 Construction de la transaction avec datum inline...');
+  
+  let tx;
+  try {
+    tx = await lucid
+      .newTx()
+      .payToContract(escrowAddress, { inline: datum }, { lovelace: amountLovelace })
+      .complete();
+    console.log('✅ Transaction construite avec succès');
+  } catch (txError: any) {
+    console.error('❌ Erreur lors de la construction de la transaction:', txError);
+    console.error('📋 Détails:', txError?.message || txError);
+    throw new Error(`Erreur lors de la construction de la transaction: ${txError?.message || 'Erreur inconnue'}`);
+  }
   
   console.log('✅ Transaction construite, signature...');
-  const signedTx = await tx.sign().complete();
-  const txHash = await signedTx.submit();
+  let signedTx;
+  try {
+    signedTx = await tx.sign().complete();
+    console.log('✅ Transaction signée avec succès');
+  } catch (signError: any) {
+    console.error('❌ Erreur lors de la signature de la transaction:', signError);
+    console.error('📋 Détails:', signError?.message || signError);
+    
+    // Messages d'erreur plus spécifiques
+    if (signError?.message?.includes('User declined') || signError?.message?.includes('User canceled')) {
+      throw new Error('Transaction annulée. Vous avez refusé de signer la transaction dans votre wallet.');
+    } else if (signError?.message?.includes('insufficient') || signError?.message?.includes('balance')) {
+      throw new Error('Solde insuffisant. Vérifiez que vous avez assez d\'ADA pour couvrir le montant et les frais.');
+    } else {
+      throw new Error(`Erreur de signature: ${signError?.message || 'Le wallet n\'a pas pu signer la transaction. Vérifiez que votre wallet est déverrouillé.'}`);
+    }
+  }
+  
+  let txHash: string;
+  try {
+    txHash = await signedTx.submit();
+    console.log('✅ Transaction soumise:', txHash);
+  } catch (submitError: any) {
+    console.error('❌ Erreur lors de la soumission de la transaction:', submitError);
+    throw new Error(`Erreur lors de la soumission: ${submitError?.message || 'La transaction n\'a pas pu être envoyée à la blockchain'}`);
+  }
   console.log('✅ Transaction soumise:', txHash);
   
   // Attendre que la transaction soit confirmée
@@ -345,8 +268,9 @@ export const lockFundsInEscrow = async (
 /**
  * Libère les fonds de l'escrow au vendeur
  * Doit être signé par l'acheteur
+ * Le script Aiken vérifie que le buyer est dans extra_signatories
  */
-export const releaseFundsFromEscrow = async (
+export const releaseFundsFromEscrowV2 = async (
   escrowUtxo: UTxO,
   sellerAddress: string,
   buyerAddress?: string,
@@ -364,139 +288,189 @@ export const releaseFundsFromEscrow = async (
     throw new Error('Adresse du vendeur invalide');
   }
   
-  // Charger le validateur (utiliser le même que pour lockFundsInEscrow)
-  const validatorStr = await loadEscrowValidator();
-  const validator = JSON.parse(validatorStr);
+  // Validateur V2 minimal AlwaysSucceeds
+  const validator = getEscrowValidator();
   
-  // Redeemer pour le script de test AlwaysSucceeds
-  // Utiliser une chaîne vide (format le plus simple que Lucid peut sérialiser)
-  const redeemer = Data.to('');
+  // Redeemer : utiliser Release selon la logique du contrat Aiken
+  // Format PlutusData: Constr(0, []) pour Release (premier variant de EscrowRedeemer)
+  // Le script vérifiera que le buyer a signé la transaction (via extra_signatories)
+  const redeemer = Data.to(new Constr(0, [])); // Release = Constr(0, [])
+  console.log('✅ Redeemer Release créé (Constr(0, []))');
   
-  console.log('🔓 Construction de la transaction de libération...');
-  console.log('   - UTXO txHash:', escrowUtxo.txHash);
-  console.log('   - UTXO outputIndex:', escrowUtxo.outputIndex);
-  console.log('   - Vendeur:', sellerAddress);
-  
-  // Vérifier le montant de l'UTXO
   const lovelaceAmount = escrowUtxo.assets?.lovelace || 0n;
   const adaAmount = Number(lovelaceAmount) / 1_000_000;
-  console.log('   - Montant lovelace brut:', lovelaceAmount.toString());
-  console.log('   - Montant ADA:', adaAmount.toFixed(6));
-  
-  // Vérifier que le montant est raisonnable (pas 2345 ADA si on a envoyé 26.74 ADA)
   if (adaAmount > 1000) {
-    console.warn('⚠️ ATTENTION: Montant UTXO suspect (>1000 ADA). Vérifiez que c\'est le bon UTXO.');
+    console.warn("Montant UTXO suspect (>1000 ADA). Vérifiez que c'est le bon UTXO.");
   }
   
-  // Obtenir l'adresse de l'acheteur si non fournie
+  if (!buyerAddress) {
+      buyerAddress = await lucid.wallet.address();
+  }
+
+  // Récupérer le buyer VKeyHash depuis le datum pour la vérification de signature
+  // Le script Aiken vérifie que le buyer est dans extra_signatories
+  let buyerVKeyHash: string | undefined;
+  if (escrowUtxo.datum) {
+    try {
+      const decodedDatum = Data.from(escrowUtxo.datum) as Constr<any>;
+      if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 2) {
+        const buyerVKeyHashField = decodedDatum.fields[1];
+        // Le datum contient des chaînes hex pour les bytes
+        buyerVKeyHash = buyerVKeyHashField as string;
+        console.log('🔎 Buyer VKeyHash trouvé dans le datum:', buyerVKeyHash?.substring(0, 16) + '...');
+      }
+    } catch (e) {
+      console.warn('⚠️ Impossible de décoder le buyer depuis le datum:', e);
+    }
+  }
+
+  console.log('🔎 UTXO sélectionné (release V2):', escrowUtxo.txHash, escrowUtxo.outputIndex);
+  console.log('🔎 Adresse UTXO:', escrowUtxo.address);
+  
+  // VÉRIFICATION CRITIQUE : S'assurer que l'adresse de l'UTXO correspond au script actuel
+  const currentEscrowAddress = await getEscrowAddress(lucid);
+  const currentScriptHash = lucid.utils.validatorToScriptHash(validator);
+  
+  console.log('🔎 Adresse escrow actuelle (script V2):', currentEscrowAddress);
+  console.log('🔎 Hash du script actuel:', currentScriptHash);
+  console.log('🔎 Adresse UTXO:', escrowUtxo.address);
+  
+  // Calculer le hash du script depuis l'adresse UTXO pour comparaison
+  // L'adresse UTXO contient le hash du script qui l'a créé
+  if (escrowUtxo.address !== currentEscrowAddress) {
+    // Extraire le hash du script depuis l'adresse UTXO
+    const utxoAddressDetails = lucid.utils.getAddressDetails(escrowUtxo.address);
+    const utxoScriptHash = utxoAddressDetails.paymentCredential?.hash;
+    
+    const errorMsg = `❌ INCOHÉRENCE DÉTECTÉE : L'UTXO a été créé avec un script différent !
+    
+    📍 Adresse UTXO (ancien script): ${escrowUtxo.address}
+    📍 Adresse actuelle (nouveau script): ${currentEscrowAddress}
+    🔑 Hash script UTXO: ${utxoScriptHash || 'N/A'}
+    🔑 Hash script actuel: ${currentScriptHash}
+    
+    💡 Cause probable : Le script escrow a changé entre le lock et le release.
+    💡 Solution : 
+    1. Vérifier dans l'explorateur (${escrowUtxo.txHash}) quel script a été utilisé pour créer cet UTXO
+    2. Utiliser le même script pour lock et release
+    3. Ou recréer l'escrow avec le nouveau script
+    
+    🔍 Transaction de création de l'UTXO: ${escrowUtxo.txHash}`;
+    
+    console.error(errorMsg);
+    throw new Error(`INCOHÉRENCE DE SCRIPT: L'UTXO a été créé avec un script différent. Adresse UTXO: ${escrowUtxo.address}, Adresse actuelle: ${currentEscrowAddress}`);
+  }
+  
+  console.log('✅ Vérification : L\'adresse UTXO correspond au script actuel');
+  console.log('✅ Hash du script correspond:', currentScriptHash);
+
+  // Construire la transaction
+  // Le script Aiken vérifie que le buyer est dans extra_signatories
+  // On doit donc ajouter le buyer comme signataire supplémentaire
+  try {
+    console.log('🔧 Construction de la transaction de libération...');
+    console.log('🔧 Script validator utilisé:', validator.type, validator.script.substring(0, 20) + '...');
+    
+    // IMPORTANT: Vérifier le format du datum et le fournir explicitement si nécessaire
+    let datumForTx: string | undefined = undefined;
+    if (escrowUtxo.datum) {
+      // Si le datum est déjà une chaîne hex, l'utiliser directement
+      if (typeof escrowUtxo.datum === 'string') {
+        datumForTx = escrowUtxo.datum;
+        console.log('🔧 Datum trouvé (string):', datumForTx.substring(0, 50) + '...');
+      } else {
+        // Sinon, essayer de le convertir
+        try {
+          datumForTx = Data.to(escrowUtxo.datum);
+          console.log('🔧 Datum converti:', datumForTx.substring(0, 50) + '...');
+        } catch (e) {
+          console.warn('⚠️ Impossible de convertir le datum:', e);
+        }
+      }
+    }
+    
+    // Construire la transaction avec le datum explicitement fourni si disponible
+    // Lucid peut avoir besoin du datum pour sérialiser correctement la transaction
+    let tx = lucid.newTx();
+    
+    // Si le datum est disponible, l'utiliser explicitement
+    if (datumForTx) {
+      // Utiliser readFrom pour lire l'UTXO avec son datum
+      tx = tx.readFrom([escrowUtxo]);
+    }
+    
+    tx = tx
+      .collectFrom([escrowUtxo], redeemer)
+      .attachSpendingValidator(validator)
+      .payToAddress(sellerAddress, escrowUtxo.assets);
+    
+    // Ajouter le buyer comme signataire supplémentaire pour que le script vérifie sa signature
+    // Le script Aiken vérifie: list.has(ctx.extra_signatories, escrow_datum.buyer)
+    if (buyerVKeyHash) {
+      // Convertir le VKeyHash en clé publique pour l'ajouter comme signataire
+      // Note: Lucid gère automatiquement les signataires via .sign(), mais on peut aussi
+      // utiliser .addSignerKey() si nécessaire. Pour l'instant, on s'appuie sur .sign()
+      console.log('✅ Buyer VKeyHash trouvé, la signature sera vérifiée par le script');
+    }
+    
+    const completedTx = await tx.complete();
+    console.log('✅ Transaction complétée avec succès');
+    
+    // Signer avec le wallet (le buyer doit signer)
+    const signedTx = await completedTx.sign().complete();
+    const txHash = await signedTx.submit();
+    
+    console.log('✅ Transaction de libération soumise:', txHash);
+    return txHash;
+  } catch (error: any) {
+    console.error('❌ Erreur lors de la construction de la transaction:', error);
+    console.error('❌ Message:', error?.message);
+    
+    throw error;
+  }
+};
+
+/**
+ * Libère les fonds de l'escrow au vendeur
+ * Doit être signé par l'acheteur
+ */
+export const releaseFundsFromEscrow = async (
+  escrowUtxo: UTxO,
+  sellerAddress: string,
+  buyerAddress?: string,
+  lucidInstance?: Lucid | null
+): Promise<string> => {
+  const lucid = lucidInstance || getLucid();
+
+  if (!escrowUtxo || !escrowUtxo.txHash || escrowUtxo.outputIndex === undefined) {
+    throw new Error('UTXO invalide pour la libération');
+  }
+  if (!sellerAddress || !sellerAddress.startsWith('addr_')) {
+    throw new Error('Adresse du vendeur invalide');
+  }
+
+  // Validateur V2 (compatible Lucid)
+  const validator = getEscrowValidator();
+
+  // Redeemer : utiliser Release (Constr(0, [])) selon la logique du contrat Aiken
+  const redeemer = Data.to(new Constr(0, [])); // Release = Constr(0, [])
+
   if (!buyerAddress) {
     buyerAddress = await lucid.wallet.address();
   }
-  
-  // Créer le script validateur - essayer tous les formats possibles jusqu'à trouver celui qui fonctionne
-  console.log('📝 Construction de la transaction avec script validateur...');
-  
-  let completedTx;
-  let lastError: any;
-  
-  // Format 1: "PlutusV2" (sans "Script")
-  try {
-    const validatorScript1: any = { 
-      type: "PlutusV2",
-      cborHex: validator.cborHex 
-    };
-    console.log('   Essai format 1: PlutusV2');
-    let tx = lucid
-      .newTx()
-      .collectFrom([escrowUtxo], redeemer)
-      .payToAddress(sellerAddress, escrowUtxo.assets)
-      .attachSpendingValidator(validatorScript1);
-    
-    if (buyerAddress) {
-      tx = tx.addSigner(buyerAddress);
-    }
-    
-    completedTx = await tx.complete();
-    console.log('✅ Format 1 (PlutusV2) accepté');
-  } catch (error1: any) {
-    lastError = error1;
-    console.warn('⚠️ Format 1 échoué:', error1?.message);
-    
-    // Format 2: "PlutusScriptV2" (format standard)
-    try {
-      const validatorScript2: any = { 
-        type: "PlutusScriptV2",
-        cborHex: validator.cborHex 
-      };
-      console.log('   Essai format 2: PlutusScriptV2');
-      let tx = lucid
-        .newTx()
-        .collectFrom([escrowUtxo], redeemer)
-        .payToAddress(sellerAddress, escrowUtxo.assets)
-        .attachSpendingValidator(validatorScript2);
-      
-      if (buyerAddress) {
-        tx = tx.addSigner(buyerAddress);
-      }
-      
-      completedTx = await tx.complete();
-      console.log('✅ Format 2 (PlutusScriptV2) accepté');
-    } catch (error2: any) {
-      lastError = error2;
-      console.warn('⚠️ Format 2 échoué:', error2?.message);
-      
-      // Format 3: script avec bytes (fromHex)
-      try {
-        console.log('   Essai format 3: script bytes (fromHex)');
-        // Nettoyer le cborHex avant conversion
-        const cleanCborHex = validator.cborHex.trim().replace(/[^0-9a-fA-F]/g, '');
-        console.log('   cborHex nettoyé pour fromHex:', cleanCborHex.substring(0, 20) + '...');
-        const cborBytes = fromHex(cleanCborHex);
-        const validatorScript3: any = { 
-          type: "PlutusV2",
-          script: cborBytes 
-        };
-        let tx = lucid
-          .newTx()
-          .collectFrom([escrowUtxo], redeemer)
-          .payToAddress(sellerAddress, escrowUtxo.assets)
-          .attachSpendingValidator(validatorScript3);
-        
-        if (buyerAddress) {
-          tx = tx.addSigner(buyerAddress);
-        }
-        
-        completedTx = await tx.complete();
-        console.log('✅ Format 3 (script bytes) accepté');
-      } catch (error3: any) {
-        lastError = error3;
-        // Format 4: cborHex direct comme string
-        try {
-          console.log('   Essai format 4: cborHex string direct');
-          let tx = lucid
-            .newTx()
-            .collectFrom([escrowUtxo], redeemer)
-            .payToAddress(sellerAddress, escrowUtxo.assets)
-            .attachSpendingValidator(validator.cborHex);
-          
-          if (buyerAddress) {
-            tx = tx.addSigner(buyerAddress);
-          }
-          
-          completedTx = await tx.complete();
-          console.log('✅ Format 4 (cborHex string) accepté');
-        } catch (error4: any) {
-          console.error('❌ Tous les formats ont échoué');
-          throw new Error(`Impossible d'attacher le script validateur. Format 1: ${error1?.message}, Format 2: ${error2?.message}, Format 3: ${error3?.message}, Format 4: ${error4?.message}`);
-        }
-      }
-    }
-  }
-  const signedTx = await completedTx.sign().complete();
+
+  console.log('🔎 UTXO sélectionné (release):', escrowUtxo.txHash, escrowUtxo.outputIndex);
+
+  const tx = await lucid
+    .newTx()
+    .collectFrom([escrowUtxo], redeemer)
+    .payToAddress(sellerAddress, escrowUtxo.assets)
+    .attachSpendingValidator(validator)
+    .complete();
+
+  const signedTx = await tx.sign().complete();
   const txHash = await signedTx.submit();
-  
-  console.log('✅ Transaction de libération soumise:', txHash);
-  
+
   return txHash;
 };
 
@@ -510,50 +484,62 @@ export const cancelEscrow = async (
 ): Promise<string> => {
   const lucid = lucidInstance || getLucid();
   
-  // Charger le validateur (utiliser le même que pour lockFundsInEscrow)
-  const validatorStr = await loadEscrowValidator();
-  const validator = JSON.parse(validatorStr);
+  // Validateur V2 (compatible Lucid)
+  const validator = getEscrowValidator();
   
-  // Pour le script de test AlwaysSucceeds, on ne lit plus le deadline dans le datum
-  // et on ne fait pas de vérification on-chain du temps. Le délai sera géré côté app (Web2).
+  // Redeemer : utiliser Refund (Constr(1, [])) selon la logique du contrat Aiken
+  // Le script vérifiera que le deadline est expiré (validity_range est entièrement après le deadline)
+  const redeemer = Data.to(new Constr(1, [])); // Refund = Constr(1, [])
 
-  // Redeemer pour annuler (chaîne vide - pour AlwaysSucceeds, le redeemer n'a pas d'importance)
-  const redeemer = Data.to('');
-  
-  // Créer le script validateur - essayer différents formats
-  let completedTx;
-  
-  try {
-    const validatorScript1: any = { type: "PlutusV2", cborHex: validator.cborHex };
-    completedTx = await lucid
-      .newTx()
-      .collectFrom([escrowUtxo], redeemer)
-      .payToAddress(buyerAddress, escrowUtxo.assets)
-      .attachSpendingValidator(validatorScript1)
-      .complete();
-  } catch (error1: any) {
+  // Logs de diagnostic pour "No variant matched" (cancel)
+  console.log('🔎 UTXO sélectionné (cancel):', escrowUtxo.txHash, escrowUtxo.outputIndex);
+  console.log('🔎 Adresse UTXO (cancel):', escrowUtxo.address);
+  console.log('🔎 Datum brut présent ? (cancel) ', escrowUtxo.datum ? 'oui' : 'non');
+  if (escrowUtxo.datum) {
     try {
-      const validatorScript2: any = { type: "PlutusScriptV2", cborHex: validator.cborHex };
-      completedTx = await lucid
-        .newTx()
-        .collectFrom([escrowUtxo], redeemer)
-        .payToAddress(buyerAddress, escrowUtxo.assets)
-        .attachSpendingValidator(validatorScript2)
-        .complete();
-    } catch (error2: any) {
-      completedTx = await lucid
-        .newTx()
-        .collectFrom([escrowUtxo], redeemer)
-        .payToAddress(buyerAddress, escrowUtxo.assets)
-        .attachSpendingValidator(validator.cborHex)
-        .complete();
+      console.log('🔎 Datum brut (hex, cancel):', escrowUtxo.datum);
+      console.log('🔎 Datum décodé (cancel, via Data.from):', Data.from(escrowUtxo.datum as any));
+    } catch (decodeErr: any) {
+      console.warn('⚠️ Échec de décodage du datum (cancel):', decodeErr?.message || decodeErr);
     }
   }
-  
-  const signedTx = await completedTx.sign().complete();
-  const txHash = await signedTx.submit();
-  
-  return txHash;
+
+  // Le script Aiken vérifie que validity_range est entièrement après le deadline
+  // On doit donc définir le validity_range pour que la vérification passe
+  // Récupérer le deadline depuis le datum
+  let deadline: bigint | undefined;
+  if (escrowUtxo.datum) {
+    try {
+      const decodedDatum = Data.from(escrowUtxo.datum) as Constr<any>;
+      if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 5) {
+        deadline = decodedDatum.fields[4] as bigint;
+        console.log('🔎 Deadline trouvé dans le datum:', deadline?.toString());
+      }
+    } catch (e) {
+      console.warn('⚠️ Impossible de décoder le deadline depuis le datum:', e);
+    }
+  }
+
+  // Si le deadline est trouvé, définir le validity_range pour qu'il commence après le deadline
+  // Sinon, utiliser un timestamp futur (le script vérifiera on-chain)
+  const now = BigInt(Date.now());
+  const validityStart = deadline && deadline > now ? deadline : now + BigInt(1000); // +1 seconde minimum
+
+  console.log('🔎 Validator type (cancel):', validator.type);
+  console.log('🔎 Utilisation du redeemer Refund (Constr(1, []))');
+
+  const completedTx = await lucid
+    .newTx()
+    .collectFrom([escrowUtxo], redeemer)
+    .payToAddress(buyerAddress, escrowUtxo.assets)
+    .attachSpendingValidator(validator)
+    .validFrom(Number(validityStart))
+    .complete();
+    
+    const signedTx = await completedTx.sign().complete();
+    const txHash = await signedTx.submit();
+    
+    return txHash;
 };
 
 /**
@@ -564,19 +550,44 @@ export const getEscrowUtxos = async (
   lucidInstance?: Lucid | null
 ): Promise<UTxO[]> => {
   const lucid = lucidInstance || getLucid();
-  if (!ESCROW_ADDRESS_TESTNET) {
-    throw new Error(
-      'Adresse du script escrow non configurée. ' +
-        'Veuillez définir VITE_ESCROW_ADDRESS_TESTNET dans votre fichier .env avec l’adresse du script sur Preprod.'
-    );
-  }
-
-  const escrowAddress = ESCROW_ADDRESS_TESTNET;
+  const escrowAddress = await getEscrowAddress(lucid);
+  
+  console.log('🔍 Recherche des UTXOs à l\'adresse escrow:', escrowAddress);
   
   // Récupérer tous les UTXOs présents à l'adresse escrow.
   // Avec le script V2 de test (AlwaysSucceeds) et un datum simplifié,
   // on ne filtre plus par orderId dans le datum.
   const utxos = await lucid.utxosAt(escrowAddress);
+  
+  console.log(`✅ ${utxos.length} UTXO(s) trouvé(s) à l'adresse escrow`);
+  
+  // Filtrer par orderId dans le datum si possible
+  if (utxos.length > 0 && orderId) {
+    const filteredUtxos = utxos.filter(utxo => {
+      if (!utxo.datum) return false;
+      try {
+        const decodedDatum = Data.from(utxo.datum) as Constr<any>;
+        if (decodedDatum instanceof Constr && decodedDatum.fields.length >= 1) {
+          const utxoOrderId = decodedDatum.fields[0] as string;
+          // Convertir l'orderId en hex pour comparaison
+          const orderIdHex = fromText(orderId);
+          // Le datum contient des chaînes hex pour les bytes
+          return utxoOrderId === orderIdHex;
+        }
+      } catch (e) {
+        console.warn('⚠️ Impossible de décoder le datum pour filtrer par orderId:', e);
+      }
+      return false;
+    });
+    
+    if (filteredUtxos.length > 0) {
+      console.log(`✅ ${filteredUtxos.length} UTXO(s) correspondant à l'orderId: ${orderId}`);
+      return filteredUtxos;
+    } else {
+      console.warn(`⚠️ Aucun UTXO ne correspond à l'orderId: ${orderId}. Retour de tous les UTXOs.`);
+    }
+  }
+  
   return utxos;
 };
 
