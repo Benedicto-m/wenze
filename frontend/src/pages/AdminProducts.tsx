@@ -76,7 +76,7 @@ const AdminProducts = () => {
       setProducts(formattedProducts);
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast.error('❌ Erreur de chargement', 'Impossible de charger les produits. ' + (error.message || ''));
+      toast.error('Erreur de chargement', 'Impossible de charger les produits. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -140,12 +140,12 @@ const AdminProducts = () => {
 
       if (productError) throw productError;
 
-      toast.success('✅ Produit supprimé', `Le produit "${showDeleteConfirm.productTitle}" et toutes ses données associées ont été supprimés avec succès.`);
+      toast.success('Produit supprimé', `Le produit "${showDeleteConfirm.productTitle}" et toutes ses données associées ont été supprimés avec succès.`);
       setShowDeleteConfirm(null);
       fetchProducts();
     } catch (error: any) {
       console.error('Error deleting product:', error);
-      toast.error('❌ Erreur de suppression', 'Impossible de supprimer le produit: ' + (error.message || ''));
+      toast.error('Erreur de suppression', 'Impossible de supprimer le produit: ' + (error.message || ''));
     } finally {
       setDeleting(null);
     }
@@ -153,7 +153,7 @@ const AdminProducts = () => {
 
   const handleBulkDelete = async () => {
     if (!bulkSellerName.trim()) {
-      toast.warning('⚠️ Nom requis', 'Veuillez entrer le nom du vendeur pour effectuer la suppression en masse.');
+      toast.warning('Nom requis', 'Veuillez entrer le nom du vendeur pour effectuer la suppression en masse.');
       return;
     }
 
@@ -168,7 +168,7 @@ const AdminProducts = () => {
       if (sellerError) throw sellerError;
 
       if (!sellerProfiles || sellerProfiles.length === 0) {
-        toast.warning('⚠️ Aucun vendeur trouvé', `Aucun vendeur trouvé avec le nom "${bulkSellerName}". Vérifiez l'orthographe et réessayez.`);
+        toast.warning('Aucun vendeur trouvé', `Aucun vendeur trouvé avec le nom "${bulkSellerName}". Vérifiez l'orthographe et réessayez.`);
         setDeleting(null);
         return;
       }
@@ -184,7 +184,7 @@ const AdminProducts = () => {
       if (productsError) throw productsError;
 
       if (!productsToDelete || productsToDelete.length === 0) {
-        toast.warning('⚠️ Aucun produit trouvé', `Aucun produit trouvé pour le vendeur "${bulkSellerName}". Ce vendeur n'a peut-être pas encore publié de produits.`);
+        toast.warning('Aucun produit trouvé', `Aucun produit trouvé pour le vendeur "${bulkSellerName}". Ce vendeur n'a peut-être pas encore publié de produits.`);
         setDeleting(null);
         return;
       }
@@ -232,7 +232,7 @@ const AdminProducts = () => {
       if (deleteError) throw deleteError;
 
       toast.success(
-        `✅ ${productsToDelete.length} produit(s) supprimé(s)`, 
+        `${productsToDelete.length} produit(s) supprimé(s)`, 
         `Tous les produits de "${bulkSellerName}" (${productsToDelete.length} produit${productsToDelete.length > 1 ? 's' : ''}) ainsi que leurs commandes, messages et ratings associés ont été supprimés avec succès.`
       );
       setShowBulkDelete(false);

@@ -395,7 +395,7 @@ WENZE supporte 9 catégories principales :
 • Matériaux de construction, outils
 • Exemples : Ciment, tôle, peinture, quincaillerie
 
-6. SERVICES ⭐
+6. SERVICES
 • Services divers avec disponibilité
 • Statut : Disponible ou Indisponible (visible pour acheteurs)
 • Contact direct : WhatsApp et/ou Email requis
@@ -1069,8 +1069,8 @@ const CardanoChatBot: React.FC = () => {
 
     // 4. Réponse par défaut améliorée avec suggestions
     return defaultResponses[language].unknown + (language === 'fr' 
-      ? '\n\n💡 Essayez de reformuler votre question ou posez-moi quelque chose comme :\n• "Comment fonctionne Cardano ?"\n• "C\'est quoi le staking ?"\n• "Comment utiliser un wallet ?"\n• "Comment faire une transaction sur WENZE ?"'
-      : '\n\n💡 Jaribu kuunda swali au niulize kitu kama:\n• "Cardano inafanyaje kazi?"\n• "Staking ni nini?"\n• "Jinsi ya kutumia mfuko?"\n• "Jinsi ya kufanya biashara kwenye WENZE?"');
+      ? '\n\nConseil : Essayez de reformuler votre question ou posez-moi quelque chose comme :\n• "Comment fonctionne Cardano ?"\n• "C\'est quoi le staking ?"\n• "Comment utiliser un wallet ?"\n• "Comment faire une transaction sur WENZE ?"'
+      : '\n\nKidokezo: Jaribu kuunda swali au niulize kitu kama:\n• "Cardano inafanyaje kazi?"\n• "Staking ni nini?"\n• "Jinsi ya kutumia mfuko?"\n• "Jinsi ya kufanya biashara kwenye WENZE?"');
   };
 
   const handleSend = async (e: React.FormEvent) => {

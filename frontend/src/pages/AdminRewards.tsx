@@ -147,7 +147,7 @@ const AdminRewards = () => {
       setClaims(data);
     } catch (error: any) {
       console.error('Error fetching claims:', error);
-      toast.error('❌ Erreur de chargement', 'Impossible de charger les réclamations. ' + (error.message || ''));
+      toast.error('Erreur de chargement', 'Impossible de charger les réclamations. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -172,8 +172,9 @@ const AdminRewards = () => {
       const result = await updateRewardClaimStatus(claimId, newStatus, txHash);
 
       if (result.success) {
-        const statusEmoji = newStatus === 'sent' ? '✅' : newStatus === 'processing' ? '🔄' : newStatus === 'failed' ? '❌' : '⏳';
-        toast.success(`${statusEmoji} Statut mis à jour`, result.message || `Le statut a été mis à jour avec succès.`);
+        // Status text without emoji
+        const statusText = newStatus === 'sent' ? 'Envoyé' : newStatus === 'processing' ? 'En traitement' : newStatus === 'failed' ? 'Échoué' : 'En attente';
+        toast.success(`Statut mis à jour`, result.message || `Le statut a été mis à jour avec succès.`);
         await fetchClaims();
         await fetchStats();
         // Réinitialiser l'input tx_hash pour cette réclamation
@@ -185,7 +186,7 @@ const AdminRewards = () => {
           });
         }
       } else {
-        toast.error('❌ Erreur de mise à jour', result.message || 'Impossible de mettre à jour le statut de la réclamation.');
+        toast.error('Erreur de mise à jour', result.message || 'Impossible de mettre à jour le statut de la réclamation.');
       }
     } catch (error: any) {
       console.error('Error updating status:', error);
@@ -197,7 +198,7 @@ const AdminRewards = () => {
 
   const handleBulkUpdateStatus = async (newStatus: 'pending' | 'processing' | 'sent' | 'failed') => {
     if (selectedClaims.size === 0) {
-      toast.warning('⚠️ Sélection requise', 'Veuillez sélectionner au moins une réclamation avant de continuer.');
+      toast.warning('Sélection requise', 'Veuillez sélectionner au moins une réclamation avant de continuer.');
       return;
     }
 
@@ -206,8 +207,9 @@ const AdminRewards = () => {
       const result = await bulkUpdateRewardClaimStatus(Array.from(selectedClaims), newStatus);
 
       if (result.success) {
-        const statusEmoji = newStatus === 'sent' ? '✅' : newStatus === 'processing' ? '🔄' : newStatus === 'failed' ? '❌' : '⏳';
-        toast.success(`${statusEmoji} ${selectedClaims.size} réclamation(s) mise(s) à jour`, result.message || `${selectedClaims.size} réclamation(s) ont été mises à jour avec succès.`);
+        // Status text without emoji
+        const statusText = newStatus === 'sent' ? 'Envoyé' : newStatus === 'processing' ? 'En traitement' : newStatus === 'failed' ? 'Échoué' : 'En attente';
+        toast.success(`${selectedClaims.size} réclamation(s) mise(s) à jour`, result.message || `${selectedClaims.size} réclamation(s) ont été mises à jour avec succès.`);
         setSelectedClaims(new Set());
         setShowBulkActions(false);
         await fetchClaims();
@@ -230,7 +232,7 @@ const AdminRewards = () => {
     }
 
     if (!adminLucid && !blockchainLucid) {
-      toast.warning('🔐 Wallet requis', 'Veuillez connecter votre wallet Cardano pour envoyer les récompenses.');
+      toast.warning('Wallet requis', 'Veuillez connecter votre wallet Cardano pour envoyer les récompenses.');
       setIsWalletModalOpen(true);
       return;
     }
@@ -238,7 +240,7 @@ const AdminRewards = () => {
     const selectedClaimsData = claims.filter(c => selectedClaims.has(c.id) && c.status === 'pending');
     
     if (selectedClaimsData.length === 0) {
-      toast.warning('⚠️ Aucune réclamation en attente', 'Aucune réclamation en attente n\'a été sélectionnée. Veuillez sélectionner des réclamations avec le statut "En attente".');
+      toast.warning('Aucune réclamation en attente', 'Aucune réclamation en attente n\'a été sélectionnée. Veuillez sélectionner des réclamations avec le statut "En attente".');
       return;
     }
 
@@ -285,7 +287,7 @@ const AdminRewards = () => {
       
       const totalAmount = selectedClaimsData.reduce((sum, c) => sum + c.reward_ada, 0);
       toast.success(
-        `✅ ${selectedClaimsData.length} récompense(s) envoyée(s) avec succès`,
+        `${selectedClaimsData.length} récompense(s) envoyée(s) avec succès`,
         `Total de ${totalAmount.toFixed(2)} ADA distribué${selectedClaimsData.length > 1 ? 's' : ''}. Transaction: ${txHash.substring(0, 16)}...`
       );
       setSelectedClaims(new Set());
@@ -294,7 +296,7 @@ const AdminRewards = () => {
       await fetchStats();
     } catch (error: any) {
       console.error('Error sending rewards:', error);
-      toast.error('❌ Erreur d\'envoi', error.message || 'Impossible d\'envoyer les récompenses. Vérifiez votre connexion et votre solde.');
+      toast.error('Erreur d\'envoi', error.message || 'Impossible d\'envoyer les récompenses. Vérifiez votre connexion et votre solde.');
     } finally {
       setSendingRewards(false);
     }
@@ -321,7 +323,7 @@ const AdminRewards = () => {
         // L'email est envoyé automatiquement dans updateRewardClaimStatus
         await updateRewardClaimStatus(claim.id, 'sent', result.txHash, true);
         toast.success(
-          `✅ Récompense de ${claim.reward_ada.toFixed(2)} ADA réclamée avec succès`,
+          `Récompense de ${claim.reward_ada.toFixed(2)} ADA réclamée avec succès`,
           `Transaction envoyée: ${result.txHash.substring(0, 16)}... L'utilisateur a été notifié par email.`
         );
         await fetchClaims();
