@@ -46,16 +46,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <Link
       to={`/products/${id}`}
-      className="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md hover:border-primary/50 transition-all duration-300 flex flex-col"
+      className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 flex flex-col animate-scale-in"
     >
-      {/* Image Container - Plus compact */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-700">
+      {/* Image Container - Plus compact avec overlay gradient */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
         <img
           src={image_url || '/placeholder.png'}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           loading="lazy"
         />
+        {/* Overlay gradient au hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         {/* Badges Overlay - Amélioré avec condition */}
         <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
@@ -110,17 +112,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {title}
         </h3>
 
-        {/* Price - Mise en avant améliorée */}
+        {/* Price - Mise en avant améliorée avec gradient */}
         <div className="mb-2">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-lg font-bold text-primary dark:text-primary-400">
+            <span className="text-xl font-extrabold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
               {formatFC(priceInFC)}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
               FC
             </span>
           </div>
-          <div className="text-[10px] text-slate-400 dark:text-slate-500">
+          <div className="text-xs text-slate-400 dark:text-slate-500 font-medium">
             ≈ {formatADA(price_ada)} ADA
           </div>
         </div>

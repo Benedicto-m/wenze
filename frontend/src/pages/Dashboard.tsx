@@ -163,16 +163,18 @@ const Dashboard = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-              Tableau de bord
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">
+              <span className="bg-gradient-to-r from-primary via-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                Tableau de bord
+              </span>
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-slate-500 dark:text-slate-400 text-lg">
               Bienvenue, <span className="font-semibold text-slate-700 dark:text-slate-300">{user?.email?.split('@')[0]}</span>
             </p>
           </div>
           <Link
             to="/products/new"
-            className="hidden md:flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors shadow-lg shadow-primary/20"
+            className="hidden md:flex items-center gap-2 bg-gradient-to-r from-primary to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 shadow-lg shadow-primary/20"
           >
             <PlusCircle className="w-5 h-5" />
             Vendre un produit
@@ -229,9 +231,9 @@ const Dashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
           <div className="flex items-center gap-2 mb-2">
-            <Package className="w-5 h-5 text-primary" />
+            <Package className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Produits</span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalProducts}</p>

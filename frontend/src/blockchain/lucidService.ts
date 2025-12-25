@@ -10,6 +10,40 @@ import { BLOCKCHAIN_CONFIG, getBlockfrostUrl, getBlockfrostProjectId } from './c
 let lucidInstance: Lucid | null = null;
 
 /**
+ * Vérifie si une erreur Blockfrost est liée à une clé API invalide ou manquante
+ */
+const isBlockfrostAuthError = (error: any): boolean => {
+  const errorMessage = error?.message?.toLowerCase() || '';
+  const errorString = String(error).toLowerCase();
+  
+  // Détecter les erreurs d'authentification courantes
+  return (
+    errorMessage.includes('403') ||
+    errorMessage.includes('401') ||
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('forbidden') ||
+    errorMessage.includes('invalid api key') ||
+    errorMessage.includes('api key') ||
+    errorString.includes('403') ||
+    errorString.includes('401') ||
+    error?.status === 403 ||
+    error?.status === 401
+  );
+};
+
+/**
+ * Vérifie si une erreur est liée à une valeur undefined convertie en BigInt
+ */
+const isBigIntConversionError = (error: any): boolean => {
+  const errorMessage = error?.message || '';
+  return (
+    errorMessage.includes('Cannot convert undefined to a BigInt') ||
+    errorMessage.includes('BigInt') ||
+    error?.name === 'TypeError'
+  );
+};
+
+/**
  * Initialise Lucid avec un wallet connecté
  */
 export const initLucid = async (walletApi: WalletApi, network: 'mainnet' | 'testnet' = 'testnet'): Promise<Lucid> => {
@@ -18,35 +52,51 @@ export const initLucid = async (walletApi: WalletApi, network: 'mainnet' | 'test
     const blockfrostUrl = getBlockfrostUrl(network);
     const projectId = getBlockfrostProjectId(network);
 
+    // Vérifier que la clé API est présente
+    if (!projectId || projectId.trim() === '') {
+      const envVarName = network === 'testnet' ? 'VITE_BLOCKFROST_PROJECT_ID' : 'VITE_BLOCKFROST_MAINNET_PROJECT_ID';
+      console.warn('⚠️ Blockfrost non configuré. Lucid ne peut pas être initialisé.');
+      console.warn(`💡 Pour utiliser Lucid, configurez ${envVarName} dans les variables d'environnement.`);
+      console.warn('📝 Sur Vercel: Allez dans Settings > Environment Variables et ajoutez la variable.');
+      throw new Error(
+        `Blockfrost non configuré. Veuillez configurer ${envVarName} dans les variables d'environnement. ` +
+        `Sur Vercel, ajoutez cette variable dans Settings > Environment Variables.`
+      );
+    }
+
     // Initialiser Lucid
     let lucid: Lucid;
-
     const networkName = network === 'testnet' ? 'Preprod' : 'Mainnet';
 
-    // Essayer d'abord avec Blockfrost si configuré, sinon utiliser le provider par défaut
-    if (projectId && projectId.trim() !== '') {
-      console.log('🔧 Tentative d\'initialisation de Lucid avec Blockfrost...');
-      console.log('📡 URL Blockfrost:', blockfrostUrl);
-      console.log('🔑 Project ID:', projectId.substring(0, 10) + '...');
-      try {
-        // Utiliser Blockfrost si la clé API est configurée
-        lucid = await Lucid.new(
-          new Blockfrost(blockfrostUrl, projectId),
-          networkName
-        );
-        console.log('✅ Lucid initialisé avec Blockfrost avec succès');
-      } catch (blockfrostError: any) {
-        console.error('❌ Erreur avec Blockfrost:', blockfrostError);
-        console.error('📋 Détails:', blockfrostError?.message || blockfrostError);
-        // Lucid nécessite un provider valide - on ne peut pas continuer sans Blockfrost
-        throw new Error(`Blockfrost non disponible: ${blockfrostError?.message || 'Erreur inconnue'}`);
+    console.log('🔧 Tentative d\'initialisation de Lucid avec Blockfrost...');
+    console.log('📡 URL Blockfrost:', blockfrostUrl);
+    console.log('🔑 Project ID:', projectId.substring(0, 10) + '...');
+    
+    try {
+      // Utiliser Blockfrost si la clé API est configurée
+      lucid = await Lucid.new(
+        new Blockfrost(blockfrostUrl, projectId),
+        networkName
+      );
+      console.log('✅ Lucid initialisé avec Blockfrost avec succès');
+    } catch (blockfrostError: any) {
+      console.error('❌ Erreur avec Blockfrost:', blockfrostError);
+      console.error('📋 Détails:', blockfrostError?.message || blockfrostError);
+      
+      // Détecter les erreurs d'authentification spécifiques
+      if (isBlockfrostAuthError(blockfrostError) || isBigIntConversionError(blockfrostError)) {
+        const envVarName = network === 'testnet' ? 'VITE_BLOCKFROST_PROJECT_ID' : 'VITE_BLOCKFROST_MAINNET_PROJECT_ID';
+        const errorMsg = 
+          `Clé API Blockfrost invalide ou manquante (erreur 403/401). ` +
+          `Vérifiez que ${envVarName} est correctement configurée dans les variables d'environnement de Vercel. ` +
+          `Allez dans Vercel > Settings > Environment Variables et assurez-vous que la variable est définie pour tous les environnements (Production, Preview, Development).`;
+        console.error('🔐 Erreur d\'authentification Blockfrost détectée');
+        console.error('💡 Solution:', errorMsg);
+        throw new Error(errorMsg);
       }
-    } else {
-      // Pour l'instant, sans Blockfrost, on ne peut pas initialiser Lucid
-      // Lucid nécessite un provider valide pour fonctionner
-      console.warn('⚠️ Blockfrost non configuré. Lucid ne peut pas être initialisé.');
-      console.warn('💡 Pour utiliser Lucid, configurez VITE_BLOCKFROST_PROJECT_ID dans .env');
-      throw new Error('Blockfrost non configuré. Veuillez configurer VITE_BLOCKFROST_PROJECT_ID dans .env pour utiliser Lucid.');
+      
+      // Autres erreurs Blockfrost
+      throw new Error(`Blockfrost non disponible: ${blockfrostError?.message || 'Erreur inconnue'}`);
     }
 
     // Sélectionner le wallet
@@ -60,9 +110,8 @@ export const initLucid = async (walletApi: WalletApi, network: 'mainnet' | 'test
     console.error('❌ Erreur lors de l\'initialisation de Lucid:', error);
     console.error('Détails de l\'erreur:', error?.message || error);
     
-    // Ne pas bloquer l'application si Lucid échoue
-    // On pourra toujours réessayer plus tard ou utiliser une fonctionnalité simplifiée
-    throw new Error(`Impossible d'initialiser Lucid: ${error?.message || 'Erreur inconnue'}`);
+    // Propager l'erreur avec le message amélioré
+    throw error;
   }
 };
 

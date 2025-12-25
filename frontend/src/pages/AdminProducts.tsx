@@ -76,7 +76,7 @@ const AdminProducts = () => {
       setProducts(formattedProducts);
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast.error('Erreur', 'Impossible de charger les produits. ' + (error.message || ''));
+      toast.error('❌ Erreur de chargement', 'Impossible de charger les produits. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -140,12 +140,12 @@ const AdminProducts = () => {
 
       if (productError) throw productError;
 
-      toast.success('Produit supprimé', 'Le produit et toutes ses données associées ont été supprimés.');
+      toast.success('✅ Produit supprimé', `Le produit "${showDeleteConfirm.productTitle}" et toutes ses données associées ont été supprimés avec succès.`);
       setShowDeleteConfirm(null);
       fetchProducts();
     } catch (error: any) {
       console.error('Error deleting product:', error);
-      toast.error('Erreur', 'Impossible de supprimer le produit: ' + (error.message || ''));
+      toast.error('❌ Erreur de suppression', 'Impossible de supprimer le produit: ' + (error.message || ''));
     } finally {
       setDeleting(null);
     }
@@ -153,7 +153,7 @@ const AdminProducts = () => {
 
   const handleBulkDelete = async () => {
     if (!bulkSellerName.trim()) {
-      toast.warning('Nom requis', 'Veuillez entrer le nom du vendeur.');
+      toast.warning('⚠️ Nom requis', 'Veuillez entrer le nom du vendeur pour effectuer la suppression en masse.');
       return;
     }
 
@@ -168,7 +168,7 @@ const AdminProducts = () => {
       if (sellerError) throw sellerError;
 
       if (!sellerProfiles || sellerProfiles.length === 0) {
-        toast.warning('Aucun vendeur trouvé', `Aucun vendeur trouvé avec le nom "${bulkSellerName}"`);
+        toast.warning('⚠️ Aucun vendeur trouvé', `Aucun vendeur trouvé avec le nom "${bulkSellerName}". Vérifiez l'orthographe et réessayez.`);
         setDeleting(null);
         return;
       }
@@ -184,7 +184,7 @@ const AdminProducts = () => {
       if (productsError) throw productsError;
 
       if (!productsToDelete || productsToDelete.length === 0) {
-        toast.warning('Aucun produit', `Aucun produit trouvé pour "${bulkSellerName}"`);
+        toast.warning('⚠️ Aucun produit trouvé', `Aucun produit trouvé pour le vendeur "${bulkSellerName}". Ce vendeur n'a peut-être pas encore publié de produits.`);
         setDeleting(null);
         return;
       }
@@ -232,15 +232,15 @@ const AdminProducts = () => {
       if (deleteError) throw deleteError;
 
       toast.success(
-        'Produits supprimés', 
-        `${productsToDelete.length} produit(s) de "${bulkSellerName}" ont été supprimés.`
+        `✅ ${productsToDelete.length} produit(s) supprimé(s)`, 
+        `Tous les produits de "${bulkSellerName}" (${productsToDelete.length} produit${productsToDelete.length > 1 ? 's' : ''}) ainsi que leurs commandes, messages et ratings associés ont été supprimés avec succès.`
       );
       setShowBulkDelete(false);
       setBulkSellerName('');
       fetchProducts();
     } catch (error: any) {
       console.error('Error bulk deleting:', error);
-      toast.error('Erreur', 'Impossible de supprimer les produits: ' + (error.message || ''));
+      toast.error('❌ Erreur de suppression', 'Impossible de supprimer les produits: ' + (error.message || ''));
     } finally {
       setDeleting(null);
     }
@@ -272,18 +272,20 @@ const AdminProducts = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 md:p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-dark">Gestion des Produits</h1>
-            <p className="text-gray-500 mt-1">Administration et suppression des produits</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-dark dark:text-white mb-2 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+              Gestion des Produits
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-lg">Administration et suppression des produits</p>
           </div>
           
           <button
             onClick={() => setShowBulkDelete(true)}
-            className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-medium flex items-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all font-semibold flex items-center gap-2 shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-5 h-5" />
             Suppression en masse
           </button>
         </div>

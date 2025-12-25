@@ -1329,11 +1329,11 @@ MAELEKEZO YA UJIBU (Mtindo wa ChatGPT):
           )}
         </button>
         
-        {/* Texte "Ask AI" */}
+        {/* Texte "Demander à l'IA" */}
         {!isOpen && (
           <div className="flex flex-col items-center gap-1.5" style={{ animation: 'fadeIn 0.3s ease-in' }}>
             <span className="text-xs font-bold text-gray-700 dark:text-gray-200 bg-gradient-to-r from-white to-violet-50 dark:from-gray-800 dark:to-violet-950/30 px-3.5 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-violet-200/50 dark:border-violet-700/50">
-              Ask AI
+              {language === 'fr' ? 'Demander à l\'IA' : 'Uliza AI'}
             </span>
             <div className="flex gap-1">
               <div className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }} />

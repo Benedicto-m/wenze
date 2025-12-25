@@ -183,7 +183,9 @@ const ProductDetail = () => {
     if (!lucid) {
       toast.error(
         'Configuration requise',
-        'Blockfrost n\'est pas configuré ou Lucid n\'est pas initialisé. Les transactions réelles nécessitent VITE_BLOCKFROST_PROJECT_ID dans .env. Contactez l\'administrateur.'
+        'Blockfrost n\'est pas configuré ou Lucid n\'est pas initialisé. ' +
+        'Les transactions nécessitent VITE_BLOCKFROST_PROJECT_ID dans les variables d\'environnement. ' +
+        'Sur Vercel, ajoutez cette variable dans Settings > Environment Variables pour tous les environnements.'
       );
       return;
     }

@@ -147,7 +147,7 @@ const AdminRewards = () => {
       setClaims(data);
     } catch (error: any) {
       console.error('Error fetching claims:', error);
-      toast.error('Erreur', 'Impossible de charger les réclamations. ' + (error.message || ''));
+      toast.error('❌ Erreur de chargement', 'Impossible de charger les réclamations. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,8 @@ const AdminRewards = () => {
       const result = await updateRewardClaimStatus(claimId, newStatus, txHash);
 
       if (result.success) {
-        toast.success('Succès', result.message || 'Statut mis à jour avec succès');
+        const statusEmoji = newStatus === 'sent' ? '✅' : newStatus === 'processing' ? '🔄' : newStatus === 'failed' ? '❌' : '⏳';
+        toast.success(`${statusEmoji} Statut mis à jour`, result.message || `Le statut a été mis à jour avec succès.`);
         await fetchClaims();
         await fetchStats();
         // Réinitialiser l'input tx_hash pour cette réclamation
@@ -184,11 +185,11 @@ const AdminRewards = () => {
           });
         }
       } else {
-        toast.error('Erreur', result.message || 'Erreur lors de la mise à jour');
+        toast.error('❌ Erreur de mise à jour', result.message || 'Impossible de mettre à jour le statut de la réclamation.');
       }
     } catch (error: any) {
       console.error('Error updating status:', error);
-      toast.error('Erreur', error.message || 'Erreur lors de la mise à jour');
+      toast.error('❌ Erreur de mise à jour', error.message || 'Une erreur est survenue lors de la mise à jour du statut.');
     } finally {
       setUpdating(null);
     }
@@ -196,7 +197,7 @@ const AdminRewards = () => {
 
   const handleBulkUpdateStatus = async (newStatus: 'pending' | 'processing' | 'sent' | 'failed') => {
     if (selectedClaims.size === 0) {
-      toast.warning('Attention', 'Veuillez sélectionner au moins une réclamation');
+      toast.warning('⚠️ Sélection requise', 'Veuillez sélectionner au moins une réclamation avant de continuer.');
       return;
     }
 
@@ -205,17 +206,18 @@ const AdminRewards = () => {
       const result = await bulkUpdateRewardClaimStatus(Array.from(selectedClaims), newStatus);
 
       if (result.success) {
-        toast.success('Succès', result.message || 'Réclamations mises à jour avec succès');
+        const statusEmoji = newStatus === 'sent' ? '✅' : newStatus === 'processing' ? '🔄' : newStatus === 'failed' ? '❌' : '⏳';
+        toast.success(`${statusEmoji} ${selectedClaims.size} réclamation(s) mise(s) à jour`, result.message || `${selectedClaims.size} réclamation(s) ont été mises à jour avec succès.`);
         setSelectedClaims(new Set());
         setShowBulkActions(false);
         await fetchClaims();
         await fetchStats();
       } else {
-        toast.error('Erreur', result.message || 'Erreur lors de la mise à jour');
+        toast.error('❌ Erreur de mise à jour', result.message || 'Impossible de mettre à jour les réclamations sélectionnées.');
       }
     } catch (error: any) {
       console.error('Error bulk updating:', error);
-      toast.error('Erreur', error.message || 'Erreur lors de la mise à jour');
+      toast.error('❌ Erreur de mise à jour', error.message || 'Une erreur est survenue lors de la mise à jour en masse.');
     } finally {
       setUpdating(null);
     }
@@ -223,12 +225,12 @@ const AdminRewards = () => {
 
   const handleSendSelectedRewards = async () => {
     if (selectedClaims.size === 0) {
-      toast.warning('Attention', 'Veuillez sélectionner au moins une réclamation');
+      toast.warning('⚠️ Sélection requise', 'Veuillez sélectionner au moins une réclamation avant d\'envoyer les récompenses.');
       return;
     }
 
     if (!adminLucid && !blockchainLucid) {
-      toast.warning('Wallet requis', 'Veuillez connecter votre wallet pour envoyer les récompenses');
+      toast.warning('🔐 Wallet requis', 'Veuillez connecter votre wallet Cardano pour envoyer les récompenses.');
       setIsWalletModalOpen(true);
       return;
     }
@@ -236,7 +238,7 @@ const AdminRewards = () => {
     const selectedClaimsData = claims.filter(c => selectedClaims.has(c.id) && c.status === 'pending');
     
     if (selectedClaimsData.length === 0) {
-      toast.warning('Attention', 'Aucune réclamation en attente sélectionnée');
+      toast.warning('⚠️ Aucune réclamation en attente', 'Aucune réclamation en attente n\'a été sélectionnée. Veuillez sélectionner des réclamations avec le statut "En attente".');
       return;
     }
 
@@ -281,13 +283,18 @@ const AdminRewards = () => {
         }
       }
       
+      const totalAmount = selectedClaimsData.reduce((sum, c) => sum + c.reward_ada, 0);
+      toast.success(
+        `✅ ${selectedClaimsData.length} récompense(s) envoyée(s) avec succès`,
+        `Total de ${totalAmount.toFixed(2)} ADA distribué${selectedClaimsData.length > 1 ? 's' : ''}. Transaction: ${txHash.substring(0, 16)}...`
+      );
       setSelectedClaims(new Set());
       setShowBulkActions(false);
       await fetchClaims();
       await fetchStats();
     } catch (error: any) {
       console.error('Error sending rewards:', error);
-      toast.error('Erreur', error.message || 'Erreur lors de l\'envoi des récompenses');
+      toast.error('❌ Erreur d\'envoi', error.message || 'Impossible d\'envoyer les récompenses. Vérifiez votre connexion et votre solde.');
     } finally {
       setSendingRewards(false);
     }
@@ -295,7 +302,7 @@ const AdminRewards = () => {
 
   const handleSendSingleReward = async (claim: RewardClaimWithUser) => {
     if (!adminLucid && !blockchainLucid) {
-      toast.warning('Wallet requis', 'Veuillez connecter votre wallet pour envoyer la récompense');
+      toast.warning('🔐 Wallet requis', 'Veuillez connecter votre wallet Cardano pour envoyer la récompense.');
       setIsWalletModalOpen(true);
       return;
     }
@@ -313,15 +320,18 @@ const AdminRewards = () => {
       if (result.success) {
         // L'email est envoyé automatiquement dans updateRewardClaimStatus
         await updateRewardClaimStatus(claim.id, 'sent', result.txHash, true);
-        toast.success('Succès', `Récompense envoyée ! Tx: ${result.txHash.substring(0, 16)}...`);
+        toast.success(
+          `✅ Récompense de ${claim.reward_ada.toFixed(2)} ADA réclamée avec succès`,
+          `Transaction envoyée: ${result.txHash.substring(0, 16)}... L'utilisateur a été notifié par email.`
+        );
         await fetchClaims();
         await fetchStats();
       } else {
-        toast.error('Erreur', result.error || 'Erreur lors de l\'envoi');
+        toast.error('❌ Erreur d\'envoi', result.error || 'Impossible d\'envoyer la récompense. Vérifiez votre connexion et votre solde.');
       }
     } catch (error: any) {
       console.error('Error sending reward:', error);
-      toast.error('Erreur', error.message || 'Erreur lors de l\'envoi');
+      toast.error('❌ Erreur d\'envoi', error.message || 'Une erreur est survenue lors de l\'envoi de la récompense.');
     } finally {
       setUpdating(null);
     }
@@ -428,11 +438,13 @@ const AdminRewards = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* En-tête */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestion des Récompenses WZP</h1>
-            <p className="text-gray-600">Gérez les réclamations de récompenses mensuelles des utilisateurs</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Gestion des Récompenses WZP
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">Gérez les réclamations de récompenses mensuelles des utilisateurs</p>
           </div>
           <div className="flex items-center gap-4">
             {wallet ? (
@@ -456,37 +468,40 @@ const AdminRewards = () => {
 
       {/* Statistiques */}
       {stats && showStats && (
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 mb-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Statistiques Globales</h2>
+        <div className="bg-gradient-to-br from-purple-600 via-pink-600 to-fuchsia-600 rounded-2xl p-6 md:p-8 mb-6 text-white shadow-2xl border border-purple-400/20">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="w-6 h-6" />
+              Statistiques Globales
+            </h2>
             <button
               onClick={() => setShowStats(false)}
-              className="text-white/80 hover:text-white transition-colors"
+              className="text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all"
             >
               <ChevronUp className="w-5 h-5" />
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="text-white/80 text-sm mb-1">Total Réclamations</div>
-              <div className="text-3xl font-bold">{stats.totalClaims}</div>
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+              <div className="text-white/90 text-sm mb-2 font-medium">Total Réclamations</div>
+              <div className="text-3xl font-extrabold">{stats.totalClaims}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="text-white/80 text-sm mb-1">En Attente</div>
-              <div className="text-3xl font-bold">{stats.pendingClaims}</div>
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+              <div className="text-white/90 text-sm mb-2 font-medium">En Attente</div>
+              <div className="text-3xl font-extrabold">{stats.pendingClaims}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="text-white/80 text-sm mb-1">Envoyées</div>
-              <div className="text-3xl font-bold">{stats.sentClaims}</div>
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+              <div className="text-white/90 text-sm mb-2 font-medium">Envoyées</div>
+              <div className="text-3xl font-extrabold">{stats.sentClaims}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="text-white/80 text-sm mb-1">Échouées</div>
-              <div className="text-3xl font-bold">{stats.failedClaims}</div>
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+              <div className="text-white/90 text-sm mb-2 font-medium">Échouées</div>
+              <div className="text-3xl font-extrabold">{stats.failedClaims}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <div className="text-white/80 text-sm mb-1">Total ADA</div>
-              <div className="text-3xl font-bold">{stats.totalRewardAmount.toFixed(2)}</div>
-              <div className="text-white/70 text-xs mt-1">
+            <div className="bg-white/15 backdrop-blur-md rounded-xl p-5 border border-white/20 hover:bg-white/20 transition-all hover:scale-105">
+              <div className="text-white/90 text-sm mb-2 font-medium">Total ADA</div>
+              <div className="text-3xl font-extrabold">{stats.totalRewardAmount.toFixed(2)}</div>
+              <div className="text-white/80 text-xs mt-2 font-medium">
                 {stats.pendingRewardAmount.toFixed(2)} ADA en attente
               </div>
             </div>

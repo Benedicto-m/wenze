@@ -115,9 +115,9 @@ const Home = () => {
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
-            <div className="text-center lg:text-left">
+            <div className="text-center lg:text-left animate-slide-in-right">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold mb-6 hover:bg-primary/20 transition-colors duration-300">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
@@ -127,10 +127,10 @@ const Home = () => {
 
             {/* Titre */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-black tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.05]">
-              <span className="block">
+              <span className="block animate-fade-in">
                 {t("home.title") || "Sécurisé & Rapide"}
               </span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-cyan-400 mt-1">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-cyan-400 mt-1 animate-fade-in" style={{ animationDelay: '0.1s' }}>
                 {t("home.subtitle") || "WENZE réinvente l'échange à Goma"}
               </span>
             </h1>
@@ -144,11 +144,14 @@ const Home = () => {
             {/* CTA Principal */}
             <Link
               to="/products"
-              className="inline-flex items-center gap-3 bg-primary text-white px-8 py-4 rounded-2xl font-bold text-lg hover:bg-primary-600 hover:scale-105 shadow-xl shadow-primary/25 transition-all duration-300 mb-8"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-primary to-blue-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-primary/40 hover:scale-105 hover:-translate-y-0.5 transition-all duration-300 mb-8 relative overflow-hidden group"
             >
-              <ShoppingBag className="w-6 h-6" />
-              Explorer le marché
-              <ArrowRight className="w-5 h-5" />
+              <span className="relative z-10 flex items-center gap-3">
+                <ShoppingBag className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+                Explorer le marché
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Link>
 
             {/* Trust Indicators */}
@@ -259,16 +262,17 @@ const Home = () => {
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <Link
               key={category.id}
               to={`/products?category=${category.id}`}
-              className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 text-center hover:border-primary hover:shadow-lg transition-all duration-300"
+              className="group bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 text-center hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300 animate-scale-in"
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <div className={`w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+              <div className={`w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
                 <category.icon className="w-8 h-8 text-white" />
               </div>
-              <div className="font-semibold text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                 {category.name}
               </div>
             </Link>
@@ -337,8 +341,8 @@ const Home = () => {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg">
+            <div className="text-center group hover-lift">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all duration-300">
                 1
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
@@ -348,8 +352,8 @@ const Home = () => {
                 Parcourez notre marketplace et trouvez ce qui vous intéresse
               </p>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg">
+            <div className="text-center group hover-lift">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all duration-300">
                 2
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
@@ -359,8 +363,8 @@ const Home = () => {
                 Les fonds sont bloqués en escrow blockchain jusqu'à la livraison
               </p>
             </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg">
+            <div className="text-center group hover-lift">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-primary/30 transition-all duration-300">
                 3
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
@@ -386,13 +390,13 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/products"
-              className="bg-white text-primary px-8 py-4 rounded-xl font-bold hover:bg-slate-100 transition-colors"
+              className="bg-white text-primary px-8 py-4 rounded-xl font-bold hover:bg-slate-100 hover:scale-105 hover:shadow-xl transition-all duration-300"
             >
               Explorer le marché
             </Link>
             <Link
               to="/signup"
-              className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-colors"
+              className="bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 hover:scale-105 hover:shadow-xl transition-all duration-300"
             >
               Créer un compte
             </Link>
