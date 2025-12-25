@@ -905,7 +905,14 @@ const OrderDetail = () => {
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                                         </svg>
                                     ) : (
-                                        <ShoppingCart className="w-6 h-6" />
+                                        <img 
+                                            src="/logo-cardano.png" 
+                                            alt="Cardano"
+                                            className="w-6 h-6 object-contain"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                            }}
+                                        />
                                     )}
                                     <span className="text-base">{processing ? 'Traitement du paiement...' : 'Payer avec ADA'}</span>
                                 </div>
@@ -1464,13 +1471,15 @@ const OrderDetail = () => {
               <div className="relative group bg-gradient-to-br from-green-500 via-green-600 to-emerald-600 rounded-xl p-4 cursor-not-allowed overflow-hidden shadow-lg border-2 border-green-400/30 aspect-square flex flex-col items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                 <div className="relative flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30 shadow-md">
-                    <svg viewBox="0 0 100 100" className="w-10 h-10">
-                      <rect x="20" y="25" width="15" height="45" rx="2" fill="white"/>
-                      <rect x="42" y="25" width="15" height="45" rx="2" fill="white"/>
-                      <path d="M 62 25 L 75 45 L 62 65 L 62 50 L 57 50 L 57 40 L 62 40 Z" fill="white"/>
-                      <circle cx="50" cy="75" r="3" fill="white"/>
-                    </svg>
+                  <div className="w-16 h-16 rounded-lg bg-white p-2 flex items-center justify-center border-2 border-white/30 shadow-md">
+                    <img 
+                      src="/mobile-money/mpesa.png" 
+                      alt="M-Pesa"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <p className="font-bold text-white text-xs text-center">M-Pesa</p>
                   <span className="absolute top-2 right-2 text-[10px] bg-amber-400/90 text-white px-2 py-0.5 rounded-full font-semibold">
@@ -1483,11 +1492,15 @@ const OrderDetail = () => {
               <div className="relative group bg-gradient-to-br from-red-500 via-red-600 to-rose-600 rounded-xl p-4 cursor-not-allowed overflow-hidden shadow-lg border-2 border-red-400/30 aspect-square flex flex-col items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                 <div className="relative flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30 shadow-md">
-                    <svg viewBox="0 0 100 100" className="w-10 h-10">
-                      <path d="M 30 70 L 50 30 L 70 70 L 62 70 L 50 45 L 38 70 Z" fill="white"/>
-                      <rect x="52" y="50" width="15" height="20" rx="2" fill="white"/>
-                    </svg>
+                  <div className="w-16 h-16 rounded-lg bg-white p-2 flex items-center justify-center border-2 border-white/30 shadow-md">
+                    <img 
+                      src="/mobile-money/airtel.png" 
+                      alt="Airtel"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <p className="font-bold text-white text-xs text-center">Airtel</p>
                   <span className="absolute top-2 right-2 text-[10px] bg-amber-400/90 text-white px-2 py-0.5 rounded-full font-semibold">
@@ -1500,11 +1513,15 @@ const OrderDetail = () => {
               <div className="relative group bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-xl p-4 cursor-not-allowed overflow-hidden shadow-lg border-2 border-orange-400/30 aspect-square flex flex-col items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                 <div className="relative flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30 shadow-md">
-                    <svg viewBox="0 0 100 100" className="w-10 h-10">
-                      <circle cx="50" cy="50" r="25" fill="none" stroke="white" strokeWidth="6"/>
-                      <circle cx="50" cy="50" r="15" fill="white" opacity="0.3"/>
-                    </svg>
+                  <div className="w-16 h-16 rounded-lg bg-white p-2 flex items-center justify-center border-2 border-white/30 shadow-md">
+                    <img 
+                      src="/mobile-money/orange.png" 
+                      alt="Orange"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <p className="font-bold text-white text-xs text-center">Orange</p>
                   <span className="absolute top-2 right-2 text-[10px] bg-amber-400/90 text-white px-2 py-0.5 rounded-full font-semibold">
@@ -1517,11 +1534,15 @@ const OrderDetail = () => {
               <div className="relative group bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl p-4 cursor-not-allowed overflow-hidden shadow-lg border-2 border-blue-400/30 aspect-square flex flex-col items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
                 <div className="relative flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30 shadow-md">
-                    <svg viewBox="0 0 100 100" className="w-10 h-10">
-                      <path d="M 35 70 L 50 35 L 65 70 L 57 70 L 50 50 L 43 70 Z" fill="white"/>
-                      <circle cx="50" cy="60" r="3" fill="white"/>
-                    </svg>
+                  <div className="w-16 h-16 rounded-lg bg-white p-2 flex items-center justify-center border-2 border-white/30 shadow-md">
+                    <img 
+                      src="/mobile-money/africell.png" 
+                      alt="Africell"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
                   </div>
                   <p className="font-bold text-white text-xs text-center">Africell</p>
                   <span className="absolute top-2 right-2 text-[10px] bg-amber-400/90 text-white px-2 py-0.5 rounded-full font-semibold">

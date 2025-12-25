@@ -571,14 +571,14 @@ const ProductDetail = () => {
       {/* Back Button - Compact */}
       <Link 
         to="/products" 
-        className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary mb-4 text-sm font-medium transition-colors"
+        className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary mb-3 text-sm font-medium transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Retour au marché
       </Link>
 
       {/* Breadcrumb - Compact */}
-      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4">
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
         <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
         <span>/</span>
         <Link to="/products" className="hover:text-primary transition-colors">Marché</Link>
@@ -588,10 +588,10 @@ const ProductDetail = () => {
         <span className="text-gray-700 dark:text-gray-300 truncate">{product.title}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Image Gallery - Left Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
+        {/* Image Gallery - Left Side - Taille optimisée */}
         <div className="sticky top-4 self-start">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-md">
             <ImageGallery 
               images={product.image_url ? [product.image_url] : []} 
               title={product.title}
@@ -599,8 +599,8 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Info Section - Right Side */}
-        <div className="space-y-5">
+        {/* Info Section - Right Side - Compacté */}
+        <div className="space-y-4">
           {/* Badges - Top */}
           <div className="flex items-center gap-2 flex-wrap">
             {product.profiles?.is_verified && (
@@ -635,26 +635,26 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Title Section - Improved */}
+          {/* Title Section - Compacté */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight mb-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-2">
               {product.title}
             </h1>
-            <div className="flex items-center gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
                 <span>{product.location || 'Goma, RDC'}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Publié le {formatDate(product.created_at)}</span>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{formatDate(product.created_at)}</span>
               </div>
             </div>
           </div>
 
-          {/* Price Card - Enhanced & More Visible */}
-          <div className="bg-gradient-to-br from-primary/5 via-blue-50/50 to-cyan-50/50 dark:from-primary/10 dark:via-gray-800 dark:to-gray-800 rounded-2xl p-5 sm:p-6 border-2 border-primary/20 dark:border-primary/30 shadow-lg">
-            <div className="mb-4">
+          {/* Price Card - Compacté */}
+          <div className="bg-gradient-to-br from-primary/5 via-blue-50/50 to-cyan-50/50 dark:from-primary/10 dark:via-gray-800 dark:to-gray-800 rounded-xl p-4 border-2 border-primary/20 dark:border-primary/30 shadow-md">
+            <div className="mb-3">
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide font-semibold">Prix</div>
               {(() => {
                 const priceInFC = getPriceInFC(product);
@@ -664,17 +664,17 @@ const ProductDetail = () => {
                     {/* Prix fixe */}
                     {product.price_type === 'fixed' || !product.price_type ? (
                       <>
-                        <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white">
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
                             {formatFC(priceInFC)}
                           </span>
-                          <span className="text-xl text-gray-500 dark:text-gray-400 font-semibold">FC</span>
+                          <span className="text-lg text-gray-500 dark:text-gray-400 font-semibold">FC</span>
                         </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">
                             ≈ {formatADA(priceInADA)} ADA
                           </span>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded-md text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded text-xs font-semibold">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                             Temps réel
                           </span>
@@ -683,19 +683,19 @@ const ProductDetail = () => {
                     ) : (
                       <>
                         {/* Prix négociable */}
-                        <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
                             {formatFC(product.price_min || 0)}
                           </span>
-                          <span className="text-lg text-gray-500 dark:text-gray-400 mx-1">-</span>
-                          <span className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+                          <span className="text-base text-gray-500 dark:text-gray-400 mx-1">-</span>
+                          <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
                             {formatFC(product.price_max || 0)}
                           </span>
-                          <span className="text-xl text-gray-500 dark:text-gray-400 font-semibold ml-1">FC</span>
+                          <span className="text-lg text-gray-500 dark:text-gray-400 font-semibold ml-1">FC</span>
                         </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-md text-xs font-semibold">
-                            <Hand className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded text-xs font-semibold">
+                            <Hand className="w-3 h-3" />
                             Prix négociable
                           </span>
                           <span className="text-xs text-gray-600 dark:text-gray-300">
@@ -745,47 +745,47 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Seller Card - Enhanced & Attractive */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 font-semibold">Vendeur</div>
+          {/* Seller Card - Compacté */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2.5 font-semibold">Vendeur</div>
             
             <Link 
               to={`/seller/${product.seller_id}`}
-              className="flex items-center gap-3 group mb-4"
+              className="flex items-center gap-2.5 group mb-3"
             >
               {product.profiles?.avatar_url ? (
                 <div className="relative">
                   <img 
                     src={product.profiles.avatar_url} 
                     alt={product.profiles.full_name}
-                    className="w-14 h-14 rounded-xl object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-primary transition"
+                    className="w-12 h-12 rounded-lg object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-primary transition"
                   />
                   {product.profiles?.is_verified && (
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
-                      <ShieldCheck className="w-3 h-3 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-0.5">
+                      <ShieldCheck className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white text-xl font-bold">
+                <div className="relative w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white text-lg font-bold">
                   {product.profiles?.full_name?.charAt(0) || 'V'}
                   {product.profiles?.is_verified && (
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
-                      <ShieldCheck className="w-3 h-3 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full p-0.5">
+                      <ShieldCheck className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}
                 </div>
               )}
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p className="text-base font-bold text-gray-900 dark:text-white group-hover:text-primary transition truncate">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-primary transition truncate">
                     {product.profiles?.full_name || 'Vendeur'}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
                     <span className="font-semibold text-gray-700 dark:text-gray-300">
                       {product.profiles?.reputation_score?.toFixed(1) || '0.0'}
                     </span>
@@ -803,16 +803,16 @@ const ProductDetail = () => {
             </Link>
           </div>
 
-          {/* Description - Enhanced */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
-            <h3 className="font-bold text-gray-900 dark:text-white mb-3 text-sm uppercase tracking-wide">Description</h3>
+          {/* Description - Compacté */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-xs uppercase tracking-wide">Description</h3>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap text-sm">
               {product.description}
             </p>
           </div>
 
-          {/* Action Buttons - Enhanced & Sticky */}
-          <div className="sticky bottom-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-5 -mx-4 sm:mx-0 sm:static sm:shadow-sm">
+          {/* Action Buttons - Compacté */}
+          <div className="sticky bottom-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl p-4 -mx-4 sm:mx-0 sm:static sm:shadow-sm">
             {/* Boutons Modifier/Supprimer pour le propriétaire */}
             {user && user.id === product.seller_id && (
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -874,8 +874,16 @@ const ProductDetail = () => {
                       className="w-full flex items-center justify-between gap-3 bg-gradient-to-r from-primary via-blue-600 to-violet-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98] transition-all disabled:opacity-50"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-white/20 rounded-lg">
-                          <ShoppingCart className="w-5 h-5" />
+                        <div className="p-1.5 bg-white/20 rounded-lg flex items-center justify-center">
+                          <img 
+                            src="/logo-cardano.png" 
+                            alt="Cardano"
+                            className="w-5 h-5 object-contain"
+                            onError={(e) => {
+                              // Fallback vers l'icône si le logo ne charge pas
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
                         </div>
                         <span className="text-sm">Payer avec ADA</span>
                       </div>

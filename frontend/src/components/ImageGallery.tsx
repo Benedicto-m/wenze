@@ -48,8 +48,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, title }) => {
   return (
     <>
       <div className="space-y-4">
-        {/* Main Image */}
-        <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden group">
+        {/* Main Image - Taille moyenne et bien proportionnée */}
+        <div className="relative aspect-[4/3] max-h-[500px] bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden group">
           <img
             src={mainImage}
             alt={title || `Image ${currentIndex + 1}`}
@@ -90,14 +90,14 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, title }) => {
           )}
         </div>
 
-        {/* Thumbnails */}
+        {/* Thumbnails - Plus compactes */}
         {images.length > 1 && (
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {images.map((image, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+                className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                   index === currentIndex
                     ? 'border-primary ring-2 ring-primary/20'
                     : 'border-slate-200 dark:border-slate-700 hover:border-primary/50'
