@@ -66,3 +66,4 @@ export function useOptimizedQuery<T>(
   return { data, loading, error, refetch };
 }
 
+

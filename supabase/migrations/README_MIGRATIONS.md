@@ -62,3 +62,4 @@ Si vous préférez exécuter les migrations une par une, vous pouvez exécuter l
 Mais la migration consolidée `01_consolidate_all_product_columns.sql` est recommandée car elle est plus simple et plus rapide.
 
 
+

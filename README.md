@@ -1,6 +1,19 @@
 # WENZE - Marketplace Sécurisée sur Cardano
 
-**WENZE** est une marketplace moderne et sécurisée construite pour la République Démocratique du Congo, intégrant la blockchain Cardano pour garantir la sécurité des transactions via un système d'escrow décentralisé.
+<div align="center">
+
+**Une marketplace moderne et sécurisée construite pour la République Démocratique du Congo, intégrant la blockchain Cardano pour garantir la sécurité des transactions via un système d'escrow décentralisé.**
+
+[![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Cardano](https://img.shields.io/badge/Cardano-Plutus-0033AD?logo=cardano)](https://cardano.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
+
+[Fonctionnalités](#-fonctionnalités) • [Installation](#-installation--démarrage) • [Architecture](#-architecture) • [Contribution](#-contribution)
+
+</div>
+
+---
 
 ## 🌟 Caractéristiques Principales
 
@@ -31,6 +44,7 @@
 ## 🚀 Installation & Démarrage
 
 ### Pré-requis
+
 - Node.js (v18+)
 - npm ou yarn
 - Un compte [Supabase](https://supabase.com) (Gratuit)
@@ -113,23 +127,28 @@ npm start
 - Création de produits avec images, prix (en ADA ou FC), catégories
 - Recherche et filtrage par catégorie
 - Affichage des produits avec prix en temps réel
+- Types de prix : fixe ou négociable avec plage min-max
+- Catégories : Électronique, Mode, Aliments, Beauté, Bricolage, Services, Immobilier, Auto, Autres
 
 ### Transactions & Escrow
 - **Achat** : L'acheteur connecte son wallet et verrouille les fonds dans l'escrow blockchain
 - **Négociation** : Système de chat avec propositions de prix
 - **Livraison** : Le vendeur confirme l'expédition
 - **Libération** : L'acheteur confirme la réception → fonds libérés automatiquement via smart contract
-- **Annulation** : Possibilité d'annuler l'escrow après un délai (en développement)
+- **Suivi** : États de commande (pending → escrow_web2 → shipped → completed)
 
 ### Système de Points WZP
 - Distribution automatique de points WZP après chaque transaction complétée
 - 50% des points pour l'acheteur, 50% pour le vendeur
 - Affichage du solde WZP dans le profil utilisateur
+- Système d'administration pour envoyer des récompenses manuelles
 
 ### Messagerie
 - Chat intégré dans chaque commande
 - Notifications en temps réel
 - Support des négociations de prix
+- Statut de lecture (simple = envoyé, double = lu)
+- Présence en ligne (indicateur online/offline)
 
 ## 📂 Structure du Projet
 
@@ -170,7 +189,9 @@ wenze/
 │               └── escrow.ak
 ├── backend/                     # API Express (optionnel)
 ├── supabase/
-│   └── migrations/              # Migrations SQL
+│   ├── migrations/              # Migrations SQL
+│   └── functions/               # Edge Functions
+│       └── send-reward-notification/
 └── supabase_schema.sql          # Schéma complet de la base
 ```
 
@@ -195,6 +216,17 @@ L'application utilise un smart contract Plutus (compilé avec Aiken) pour gérer
 
 Tous les wallets compatibles CIP-30 sont supportés.
 
+### Compilation du Smart Contract
+
+Pour compiler le smart contract escrow :
+
+```bash
+cd frontend/contracts/escrow
+aiken build
+```
+
+Le contrat compilé sera disponible dans `frontend/public/contracts/`.
+
 ## 🌐 Déploiement
 
 ### Vercel (Recommandé)
@@ -202,14 +234,24 @@ Tous les wallets compatibles CIP-30 sont supportés.
 1. Poussez votre code sur GitHub
 2. Importez le projet sur [Vercel](https://vercel.com)
 3. Configurez le **Root Directory** : `frontend`
-4. Ajoutez les variables d'environnement (voir section Configuration)
+4. Ajoutez les variables d'environnement :
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_BLOCKFROST_PROJECT_ID`
+   - `VITE_ESCROW_ADDRESS_TESTNET`
 5. Déployez !
 
-Voir `DEPLOY.md` pour plus de détails.
+### Migrations de Base de Données
+
+Les migrations SQL sont disponibles dans `supabase/migrations/`. Exécutez-les dans l'ordre dans l'éditeur SQL de Supabase :
+
+1. `01_consolidate_all_product_columns.sql` - Colonnes consolidées pour produits
+2. `add_is_admin_to_profiles.sql` - Système d'administration
+3. `create_wzp_rewards_system.sql` - Système de récompenses WZP
+4. `create_wzp_leaderboard.sql` - Tableau des leaders
+5. Autres migrations selon vos besoins
 
 ## ⚠️ État Actuel & Limitations
-
-Pour une liste détaillée des fonctionnalités implémentées et non implémentées, voir [FONCTIONNALITES.md](./FONCTIONNALITES.md)
 
 ### ✅ Fonctionnel
 - Authentification complète (Email/Password, Google OAuth)
@@ -236,16 +278,58 @@ Pour une liste détaillée des fonctionnalités implémentées et non implément
 - **Lucid Version** : 0.10.11 (limitations connues avec Plutus V3)
 - **Smart Contract** : Script de test Plutus V2 utilisé en fallback
 
+## 🔧 Configuration Avancée
+
+### Edge Functions Supabase
+
+Le projet inclut une Edge Function pour l'envoi d'emails de notification :
+
+- **Fonction** : `send-reward-notification`
+- **Service** : Resend API
+- **Configuration** : Voir `supabase/functions/send-reward-notification/README.md`
+
+### Système d'Administration
+
+Pour créer un compte administrateur et gérer les récompenses WZP :
+
+1. Exécutez la migration `add_is_admin_to_profiles.sql`
+2. Mettez à jour un profil avec `is_admin = true` dans Supabase
+3. Accédez à `/admin/rewards` pour gérer les récompenses
+
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+Les contributions sont les bienvenues ! Voici comment contribuer :
+
+1. Fork le projet
+2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`)
+3. Committez vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
+
+### Guidelines
+
+- Suivez les conventions de code existantes
+- Ajoutez des commentaires pour le code complexe
+- Testez vos modifications
+- Mettez à jour la documentation si nécessaire
 
 ## 📄 Licence
 
 Ce projet est propriétaire. Tous droits réservés.
 
+## 🙏 Remerciements
+
+- [Cardano](https://cardano.org/) - Pour la blockchain
+- [Supabase](https://supabase.com/) - Pour l'infrastructure backend
+- [Lucid](https://github.com/spacebudz/lucid) - Pour l'intégration Cardano
+- [Aiken](https://aiken-lang.org/) - Pour les smart contracts
+
 ---
+
+<div align="center">
 
 **Développé avec ❤️ à Goma, RDC**
 
 *WENZE - L'avenir du commerce sécurisé en RDC*
+
+</div>

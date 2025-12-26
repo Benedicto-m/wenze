@@ -94,5 +94,5 @@ La fonction est appelée **automatiquement** depuis le frontend quand :
 
 ---
 
-**Pour plus de détails, voir : `docs/CONFIGURATION_EMAIL_NOTIFICATIONS.md`**
+**Note** : Cette fonction est optionnelle. Si elle n'est pas configurée, les récompenses fonctionneront toujours, mais sans notifications email.
 
