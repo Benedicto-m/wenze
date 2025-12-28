@@ -4,6 +4,7 @@ import { parseCborBalance, verifyNetwork } from '../blockchain/walletUtils';
 import { checkNetwork } from '../blockchain/config';
 import { initLucid, resetLucid } from '../blockchain/lucidService';
 import { Lucid } from 'lucid-cardano';
+import { getWalletConnector, ConnectedWallet } from '../wallet/connector';
 
 interface BlockchainContextType {
   wallet: WalletData | null;
@@ -28,50 +29,57 @@ export const BlockchainProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     const loadWallet = async () => {
       try {
+        const connector = getWalletConnector();
+        
+        // Vérifier si le connector a déjà un wallet connecté
+        if (connector.isConnected()) {
+          const connectedWallet = connector.getConnectedWallet();
+          if (connectedWallet) {
+            await syncWalletFromConnector(connectedWallet);
+            return;
+          }
+        }
+
+        // Fallback: charger depuis localStorage (ancien système)
         const savedWalletId = localStorage.getItem('wenze-wallet-id');
         const savedWalletData = localStorage.getItem('wenze-wallet-data');
         
-        if (savedWalletId && savedWalletData && window.cardano?.[savedWalletId]) {
+        if (savedWalletId && savedWalletData) {
           try {
-            // Vérifier si le wallet est toujours connecté
-            const api = await window.cardano[savedWalletId].enable();
-            const walletData: WalletData = JSON.parse(savedWalletData);
-            
-            // Vérifier que l'adresse est toujours valide
-            const addresses = await api.getUsedAddresses();
-            if (addresses && addresses.length > 0) {
-              setWalletApi(api);
-              setWallet(walletData);
-              // Détecter le réseau depuis l'adresse
-              const address = walletData.addressBech32 || addresses[0];
-              const detectedNetwork = checkNetwork(address) ? 'testnet' : 'mainnet';
-              setNetwork(detectedNetwork);
+            // Essayer de reconnecter via le connector
+            if (savedWalletId && window.cardano?.[savedWalletId]) {
+              const api = await window.cardano[savedWalletId].enable();
+              const walletData: WalletData = JSON.parse(savedWalletData);
               
-              // Vérifier le réseau (doit être testnet pour le développement)
-              const networkCheck = verifyNetwork(walletData);
-              if (!networkCheck.valid) {
-                console.warn('⚠️ Network warning:', networkCheck.message);
-              }
-              
-              // Initialiser Lucid en arrière-plan (non-bloquant pour améliorer la latence)
-              initLucid(api, detectedNetwork)
-                .then((lucidInstance) => {
-                  setLucid(lucidInstance);
-                  console.log('✅ Lucid initialisé avec succès');
-                })
-                .catch((error: any) => {
-                  console.warn('⚠️ Lucid ne peut pas être initialisé:', error?.message || error);
-                  console.info('ℹ️ L\'application continuera de fonctionner sans Lucid');
-                  setLucid(null);
+              const addresses = await api.getUsedAddresses();
+              if (addresses && addresses.length > 0) {
+                setWalletApi(api);
+                setWallet(walletData);
+                const address = walletData.addressBech32 || addresses[0];
+                const detectedNetwork = checkNetwork(address) ? 'testnet' : 'mainnet';
+                setNetwork(detectedNetwork);
+                
+                const networkCheck = verifyNetwork(walletData);
+                if (!networkCheck.valid) {
+                  console.warn('⚠️ Network warning:', networkCheck.message);
+                }
+                
+                initLucid(api, detectedNetwork)
+                  .then((lucidInstance) => {
+                    setLucid(lucidInstance);
+                    console.log('✅ Lucid initialisé avec succès');
+                  })
+                  .catch((error: any) => {
+                    console.warn('⚠️ Lucid ne peut pas être initialisé:', error?.message || error);
+                    setLucid(null);
+                  });
+                
+                refreshBalance(api, walletData).catch((error) => {
+                  console.warn('Error refreshing balance:', error);
                 });
-              
-              // Rafraîchir le solde en arrière-plan (non-bloquant)
-              refreshBalance(api, walletData).catch((error) => {
-                console.warn('Error refreshing balance:', error);
-              });
+              }
             }
           } catch (error) {
-            // Wallet déconnecté ou refusé
             localStorage.removeItem('wenze-wallet-id');
             localStorage.removeItem('wenze-wallet-data');
           }
@@ -82,6 +90,50 @@ export const BlockchainProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
 
     loadWallet();
+  }, []);
+
+  // Synchronise l'état depuis le connector
+  const syncWalletFromConnector = useCallback(async (connectedWallet: ConnectedWallet) => {
+    const walletData: WalletData = {
+      name: connectedWallet.walletName,
+      address: connectedWallet.address,
+      addressBech32: connectedWallet.addressBech32,
+      balance: connectedWallet.balance || 0,
+      walletId: connectedWallet.walletId,
+      icon: connectedWallet.icon,
+    };
+
+    setWallet(walletData);
+    setWalletApi(connectedWallet.api || null);
+    
+    const detectedNetwork = checkNetwork(connectedWallet.addressBech32) ? 'testnet' : 'mainnet';
+    setNetwork(detectedNetwork);
+    
+    const networkCheck = verifyNetwork(walletData);
+    if (!networkCheck.valid) {
+      console.warn('⚠️ Network warning:', networkCheck.message);
+    }
+    
+    localStorage.setItem('wenze-wallet-id', connectedWallet.walletId);
+    localStorage.setItem('wenze-wallet-data', JSON.stringify(walletData));
+    
+    if (connectedWallet.api && connectedWallet.method === 'cip30') {
+      initLucid(connectedWallet.api, detectedNetwork)
+        .then((lucidInstance) => {
+          setLucid(lucidInstance);
+          console.log('✅ Lucid initialisé avec succès');
+        })
+        .catch((error: any) => {
+          console.warn('⚠️ Lucid ne peut pas être initialisé:', error?.message || error);
+          setLucid(null);
+        });
+    }
+    
+    if (connectedWallet.api) {
+      refreshBalance(connectedWallet.api, walletData).catch((error) => {
+        console.warn('Error refreshing balance:', error);
+      });
+    }
   }, []);
 
   const refreshBalance = useCallback(async (api?: any, walletData?: WalletData) => {
@@ -103,33 +155,34 @@ export const BlockchainProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [walletApi, wallet]);
 
-  const connectWallet = useCallback(async (walletData: WalletData) => {
-    // Mettre à jour l'état du wallet immédiatement pour un feedback rapide
-    setWallet(walletData);
+  const connectWallet = useCallback(async (walletData: WalletData | ConnectedWallet) => {
+    // Si c'est un ConnectedWallet du connector, le synchroniser
+    if ('method' in walletData) {
+      await syncWalletFromConnector(walletData as ConnectedWallet);
+      return;
+    }
+
+    // Sinon, utiliser l'ancien système (compatibilité)
+    const data = walletData as WalletData;
+    setWallet(data);
     
-    // Détecter le réseau depuis l'adresse (opération synchrone, rapide)
-    const address = walletData.addressBech32;
+    const address = data.addressBech32;
     const detectedNetwork = checkNetwork(address) ? 'testnet' : 'mainnet';
     setNetwork(detectedNetwork);
     
-    // Vérifier le réseau (synchrone)
-    const networkCheck = verifyNetwork(walletData);
+    const networkCheck = verifyNetwork(data);
     if (!networkCheck.valid) {
       console.warn('⚠️ Network warning:', networkCheck.message);
     }
     
-    // Sauvegarder dans localStorage (synchrone, rapide)
-    localStorage.setItem('wenze-wallet-id', walletData.walletId);
-    localStorage.setItem('wenze-wallet-data', JSON.stringify(walletData));
+    localStorage.setItem('wenze-wallet-id', data.walletId);
+    localStorage.setItem('wenze-wallet-data', JSON.stringify(data));
     
-    // Récupérer l'API du wallet (asynchrone mais nécessaire)
-    if (window.cardano?.[walletData.walletId]) {
+    if (window.cardano?.[data.walletId]) {
       try {
-        const api = await window.cardano[walletData.walletId].enable();
+        const api = await window.cardano[data.walletId].enable();
         setWalletApi(api);
         
-        // Initialiser Lucid en arrière-plan (non-bloquant)
-        // Ne pas attendre pour améliorer la réactivité
         initLucid(api, detectedNetwork)
           .then((lucidInstance) => {
             setLucid(lucidInstance);
@@ -137,22 +190,30 @@ export const BlockchainProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           })
           .catch((error: any) => {
             console.warn('⚠️ Lucid ne peut pas être initialisé:', error?.message || error);
-            console.info('ℹ️ Le wallet reste connecté et fonctionnel sans Lucid');
-            // Ne pas bloquer - le wallet fonctionne toujours
             setLucid(null);
           });
       } catch (error: any) {
         console.error('Error enabling wallet API:', error);
       }
     }
-  }, []);
+  }, [syncWalletFromConnector]);
 
-  const disconnectWallet = useCallback(() => {
+  const disconnectWallet = useCallback(async () => {
+    // Déconnecter via le connector si connecté
+    const connector = getWalletConnector();
+    if (connector.isConnected()) {
+      try {
+        await connector.disconnect();
+      } catch (error) {
+        console.error('Error disconnecting via connector:', error);
+      }
+    }
+    
     setWallet(null);
     setWalletApi(null);
     setNetwork(null);
     setLucid(null);
-    resetLucid(); // Réinitialiser l'instance Lucid globale
+    resetLucid();
     localStorage.removeItem('wenze-wallet-id');
     localStorage.removeItem('wenze-wallet-data');
   }, []);

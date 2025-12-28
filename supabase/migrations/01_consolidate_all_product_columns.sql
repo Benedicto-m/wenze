@@ -58,3 +58,5 @@ COMMENT ON COLUMN products.is_available IS 'Statut de disponibilité pour les se
 
 
 
+
+

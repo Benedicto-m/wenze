@@ -63,3 +63,5 @@ Mais la migration consolidée `01_consolidate_all_product_columns.sql` est recom
 
 
 
+
+
