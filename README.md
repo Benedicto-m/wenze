@@ -328,7 +328,6 @@ Ce projet est propriétaire. Tous droits réservés.
 
 <div align="center">
 
-**Développé avec ❤️ à Goma, RDC**
 
 *WENZE - L'avenir du commerce sécurisé en RDC*
 
